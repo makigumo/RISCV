@@ -1,0 +1,388 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		376CF69F1DF38E7000020F20 /* RISCVCtx.m in Sources */ = {isa = PBXBuildFile; fileRef = 376CF69E1DF38E7000020F20 /* RISCVCtx.m */; };
+		376CF6A21DF38E7000020F20 /* RISCVCPU.m in Sources */ = {isa = PBXBuildFile; fileRef = 376CF6A11DF38E7000020F20 /* RISCVCPU.m */; };
+		379713311DF430DA00C870DE /* RISCVTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 379713301DF430DA00C870DE /* RISCVTests.m */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		376CF69A1DF38E7000020F20 /* RISCV.hopperCPU */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RISCV.hopperCPU; sourceTree = BUILT_PRODUCTS_DIR; };
+		376CF69D1DF38E7000020F20 /* RISCVCtx.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = RISCVCtx.h; sourceTree = "<group>"; };
+		376CF69E1DF38E7000020F20 /* RISCVCtx.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = RISCVCtx.m; sourceTree = "<group>"; };
+		376CF6A01DF38E7000020F20 /* RISCVCPU.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = RISCVCPU.h; sourceTree = "<group>"; };
+		376CF6A11DF38E7000020F20 /* RISCVCPU.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = RISCVCPU.m; sourceTree = "<group>"; };
+		376CF6A31DF38E7000020F20 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		3797132E1DF430DA00C870DE /* RISCVTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RISCVTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		379713301DF430DA00C870DE /* RISCVTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = RISCVTests.m; sourceTree = "<group>"; };
+		379713321DF430DA00C870DE /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		376CF6961DF38E7000020F20 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		3797132B1DF430DA00C870DE /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		376CF6901DF38E7000020F20 = {
+			isa = PBXGroup;
+			children = (
+				376CF69C1DF38E7000020F20 /* RISCV */,
+				3797132F1DF430DA00C870DE /* RISCVTests */,
+				376CF69B1DF38E7000020F20 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		376CF69B1DF38E7000020F20 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				376CF69A1DF38E7000020F20 /* RISCV.hopperCPU */,
+				3797132E1DF430DA00C870DE /* RISCVTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		376CF69C1DF38E7000020F20 /* RISCV */ = {
+			isa = PBXGroup;
+			children = (
+				376CF69D1DF38E7000020F20 /* RISCVCtx.h */,
+				376CF69E1DF38E7000020F20 /* RISCVCtx.m */,
+				376CF6A01DF38E7000020F20 /* RISCVCPU.h */,
+				376CF6A11DF38E7000020F20 /* RISCVCPU.m */,
+				376CF6A31DF38E7000020F20 /* Info.plist */,
+			);
+			path = RISCV;
+			sourceTree = "<group>";
+		};
+		3797132F1DF430DA00C870DE /* RISCVTests */ = {
+			isa = PBXGroup;
+			children = (
+				379713301DF430DA00C870DE /* RISCVTests.m */,
+				379713321DF430DA00C870DE /* Info.plist */,
+			);
+			path = RISCVTests;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		376CF6991DF38E7000020F20 /* RISCV */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 376CF6A61DF38E7000020F20 /* Build configuration list for PBXNativeTarget "RISCV" */;
+			buildPhases = (
+				376CF6951DF38E7000020F20 /* Sources */,
+				376CF6961DF38E7000020F20 /* Frameworks */,
+				376CF6971DF38E7000020F20 /* Resources */,
+				376CF6981DF38E7000020F20 /* Run Script */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = RISCV;
+			productName = RISCV;
+			productReference = 376CF69A1DF38E7000020F20 /* RISCV.hopperCPU */;
+			productType = "com.apple.product-type.bundle";
+		};
+		3797132D1DF430DA00C870DE /* RISCVTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 379713351DF430DA00C870DE /* Build configuration list for PBXNativeTarget "RISCVTests" */;
+			buildPhases = (
+				3797132A1DF430DA00C870DE /* Sources */,
+				3797132B1DF430DA00C870DE /* Frameworks */,
+				3797132C1DF430DA00C870DE /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = RISCVTests;
+			productName = RISCVTests;
+			productReference = 3797132E1DF430DA00C870DE /* RISCVTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		376CF6911DF38E7000020F20 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 0820;
+				ORGANIZATIONNAME = Makigumo;
+				TargetAttributes = {
+					376CF6991DF38E7000020F20 = {
+						CreatedOnToolsVersion = 8.2;
+						ProvisioningStyle = Automatic;
+					};
+					3797132D1DF430DA00C870DE = {
+						CreatedOnToolsVersion = 8.2;
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = 376CF6941DF38E7000020F20 /* Build configuration list for PBXProject "RISCV" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+			);
+			mainGroup = 376CF6901DF38E7000020F20;
+			productRefGroup = 376CF69B1DF38E7000020F20 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				376CF6991DF38E7000020F20 /* RISCV */,
+				3797132D1DF430DA00C870DE /* RISCVTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		376CF6971DF38E7000020F20 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		3797132C1DF430DA00C870DE /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		376CF6981DF38E7000020F20 /* Run Script */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Run Script";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/bash;
+			shellScript = "rm -rf \"${INSTALL_PATH}/RISCV.hopperCPU\"\nmkdir -p \"${INSTALL_PATH}\"\ncp -rf \"${BUILT_PRODUCTS_DIR}/RISCV.hopperCPU\" \"${INSTALL_PATH}\"\n                  ";
+			showEnvVarsInLog = 0;
+		};
+/* End PBXShellScriptBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		376CF6951DF38E7000020F20 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				376CF6A21DF38E7000020F20 /* RISCVCPU.m in Sources */,
+				376CF69F1DF38E7000020F20 /* RISCVCtx.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		3797132A1DF430DA00C870DE /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				379713311DF430DA00C870DE /* RISCVTests.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		376CF6A41DF38E7000020F20 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.12;
+				MTL_ENABLE_DEBUG_INFO = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		376CF6A51DF38E7000020F20 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.12;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		376CF6A71DF38E7000020F20 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				HEADER_SEARCH_PATHS = "$(SRCROOT)/HopperSDK/include";
+				INFOPLIST_FILE = RISCV/Info.plist;
+				INSTALL_PATH = "$(USER_LIBRARY_DIR)/Application Support/Hopper/PlugIns/V4/CPUs";
+				MACOSX_DEPLOYMENT_TARGET = 10.10;
+				PRODUCT_BUNDLE_IDENTIFIER = com.makigumo.RISCV;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				WRAPPER_EXTENSION = hopperCPU;
+			};
+			name = Debug;
+		};
+		376CF6A81DF38E7000020F20 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				HEADER_SEARCH_PATHS = "$(SRCROOT)/HopperSDK/include";
+				INFOPLIST_FILE = RISCV/Info.plist;
+				INSTALL_PATH = "$(USER_LIBRARY_DIR)/Application Support/Hopper/PlugIns/V4/CPUs";
+				MACOSX_DEPLOYMENT_TARGET = 10.10;
+				PRODUCT_BUNDLE_IDENTIFIER = com.makigumo.RISCV;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				WRAPPER_EXTENSION = hopperCPU;
+			};
+			name = Release;
+		};
+		379713331DF430DA00C870DE /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				HEADER_SEARCH_PATHS = "$(SRCROOT)/HopperSDK/include";
+				INFOPLIST_FILE = RISCVTests/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = com.makigumo.RISCVTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		379713341DF430DA00C870DE /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				HEADER_SEARCH_PATHS = "$(SRCROOT)/HopperSDK/include";
+				INFOPLIST_FILE = RISCVTests/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = com.makigumo.RISCVTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		376CF6941DF38E7000020F20 /* Build configuration list for PBXProject "RISCV" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				376CF6A41DF38E7000020F20 /* Debug */,
+				376CF6A51DF38E7000020F20 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		376CF6A61DF38E7000020F20 /* Build configuration list for PBXNativeTarget "RISCV" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				376CF6A71DF38E7000020F20 /* Debug */,
+				376CF6A81DF38E7000020F20 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		379713351DF430DA00C870DE /* Build configuration list for PBXNativeTarget "RISCVTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				379713331DF430DA00C870DE /* Debug */,
+				379713341DF430DA00C870DE /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 376CF6911DF38E7000020F20 /* Project object */;
+}
