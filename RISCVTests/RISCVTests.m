@@ -25,20 +25,28 @@
     [super tearDown];
 }
 
+- (void)testGetOpcode {
+    XCTAssertEqual(getOpcode(0x4a018193), OPCODE_OPIMM);
+}
+
 - (void)testGetITypeImmediate {
-        XCTAssertEqual(getItypeImmediate(0x4a018193), 0x4a0);
-        XCTAssertEqual(getItypeImmediate(0x088300e7), 136);
-        XCTAssertEqual(getItypeImmediate(0x6780006f), 0x800006c0-0x80000048);
-        XCTAssertEqual(getItypeImmediate(0x6710006f), 0x670, @"clearing LSB");
+    XCTAssertEqual(getItypeImmediate(0x4a018193), 0x4a0);
+    XCTAssertEqual(getItypeImmediate(0x088300e7), 136);
+    XCTAssertEqual(getItypeImmediate(0x6780006f), 0x800006c0 - 0x80000048);
+    XCTAssertEqual(getItypeImmediate(0x6710006f), 0x670, @"clearing LSB");
 }
 
 - (void)testGetUJTypeImmediate {
-        XCTAssertEqual(getUJtypeImmediate(0x345760ef), 0x76B44);
-        XCTAssertEqual(getUJtypeImmediate(0x374280ef), 0x28374);
-        XCTAssertEqual(getUJtypeImmediate(0x435250ef), 0x25C34);
-        XCTAssertEqual(getUJtypeImmediate(0x41d250ef), 0x25C1C);
-        XCTAssertEqual(getUJtypeImmediate(0x4e4920ef), 0x924E4);
-        XCTAssertEqual(getUJtypeImmediate(0x951ff0ef), 0xFFFFF950);
+    XCTAssertEqual(getUJtypeImmediate(0x345760ef), 0x76B44);
+    XCTAssertEqual(getUJtypeImmediate(0x374280ef), 0x28374);
+    XCTAssertEqual(getUJtypeImmediate(0x435250ef), 0x25C34);
+    XCTAssertEqual(getUJtypeImmediate(0x41d250ef), 0x25C1C);
+    XCTAssertEqual(getUJtypeImmediate(0x4e4920ef), 0x924E4);
+    XCTAssertEqual(getUJtypeImmediate(0x951ff0ef), 0xFFFFF950);
+}
+
+- (void)testGetBTypeImmediate {
+    XCTAssertEqual(getBtypeImmediate(0x04051063), 0x40);
 }
 
 

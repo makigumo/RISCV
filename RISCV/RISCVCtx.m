@@ -120,37 +120,31 @@ DisasmOperandType (*getRegMask)(uint8_t) = &getRegMask32;
     return 0;
 }
 
-#define OPCODE_MASK 0x0000007f
-#define RD_MASK     0x00000f80
-#define SRC_MASK    0x000F8000
-#define FUNCT3_MASK 0x00007000
-#define IMM_MASK    0xfffff000
-
-typedef struct {
-    uint8_t opcode; /* bits 6..0 */
-    uint8_t reg_dest; /* bits 11..7 */
-    uint8_t funct3; /* bits 14..12 */
-    uint8_t reg_src1; /* bits 19..15 */
-    uint8_t reg_src2; /* bits 24..20 */
-    uint8_t funct7; /* bits 31..25 */
-} rtype_insn;
-
 - (int)disassembleSingleInstruction:(DisasmStruct *)disasm usingProcessorMode:(NSUInteger)mode {
     if (disasm->bytes == NULL) return DISASM_UNKNOWN_OPCODE;
 
     uint32_t insncode = disasm->bytes[3] << 24 | disasm->bytes[2] << 16 | disasm->bytes[1] << 8 | disasm->bytes[0];
-    uint32_t opcode = insncode & OPCODE_MASK;
+    uint8_t opcode = getOpcode(insncode);
 
     // all instructions are 32 bit
     int len = 4;
     disasm->instruction.length = 4;
-    uint8_t dest_reg = (uint8_t) ((insncode & RD_MASK) >> 7);
-    uint8_t src_reg = (uint8_t) ((insncode & SRC_MASK) >> 15);
-    uint8_t funct3 = (uint8_t) ((insncode & FUNCT3_MASK) >> 11);
+    uint8_t dest_reg = (uint8_t) ((insncode & DEST_MASK) >> 7);
+    uint8_t src1_reg = (uint8_t) ((insncode & SRC1_MASK) >> 15);
+    uint8_t src2_reg = (uint8_t) ((insncode & SRC2_MASK) >> 20);
+    uint8_t funct3 = (uint8_t) ((insncode & FUNCT3_MASK) >> 12);
+    uint8_t funct7 = (uint8_t) ((insncode & FUNCT7_MASK) >> 25);
+
+#if DEBUG
+    if ((disasm->virtualAddr & 0xffffffff) == 0x8000000c) {
+        NSObject <HPHopperServices> *services = _cpu.hopperServices;
+        [services logMessage:[NSString stringWithFormat:@"opcode: %d, funct3: %d, rd: %d, rs1: %d, rs2: %d, imm: %0x", opcode, funct3, dest_reg, src1_reg, src2_reg, getItypeImmediate(insncode)]];
+    }
+#endif
 
     switch (opcode) {
 
-        case 0b0010111 /* AUIPC adds a 20-bit upper immediate to the PC */:
+        case OPCODE_AUIPC /* AUIPC adds a 20-bit upper immediate to the PC */:
             strcpy(disasm->instruction.mnemonic, "auipc");
             disasm->operand[0].type = DISASM_OPERAND_REGISTER_TYPE;
             disasm->operand[0].type |= getRegMask(dest_reg);
@@ -161,7 +155,7 @@ typedef struct {
             disasm->instruction.addressValue = (Address) (disasm->operand[1].immediateValue << 12);
             break;
 
-        case 0b0110111 /* LUI */:
+        case OPCODE_LUI /* LUI */:
             strcpy(disasm->instruction.mnemonic, "lui");
             disasm->operand[0].type = DISASM_OPERAND_REGISTER_TYPE;
             disasm->operand[0].type |= getRegMask(dest_reg);
@@ -172,7 +166,7 @@ typedef struct {
             disasm->instruction.addressValue = (Address) (disasm->operand[1].immediateValue << 12);
             break;
 
-        case 0b1101111 /* JAL */:
+        case OPCODE_JAL /* JAL */:
             if (dest_reg == 0 /* zero */) {
                 // plain unconditional jump
                 // j offset
@@ -206,11 +200,10 @@ typedef struct {
             }
             break;
 
-        case 0b1100111 /* JALR */: {
-            int32_t imm = getItypeImmediate(insncode);
-            if (imm == 0) {
+        case OPCODE_JALR /* JALR */:
+            if (getItypeImmediate(insncode) == 0) {
                 if (dest_reg == 0 /* zero */) {
-                    if (src_reg == 1 /* ra */) {
+                    if (src1_reg == 1 /* ra */) {
                         // ret = jalr zero, ra, 0
                         strcpy(disasm->instruction.mnemonic, "ret");
                         disasm->instruction.branchType = DISASM_BRANCH_RET;
@@ -218,7 +211,7 @@ typedef struct {
                         // jr rs = jalr zero, rs, 0
                         strcpy(disasm->instruction.mnemonic, "jr");
                         disasm->operand[0].type = DISASM_OPERAND_REGISTER_TYPE;
-                        disasm->operand[0].type |= getRegMask(src_reg);
+                        disasm->operand[0].type |= getRegMask(src1_reg);
                         disasm->operand[0].accessMode = DISASM_ACCESS_READ;
                         disasm->operand[0].isBranchDestination = 1;
                         disasm->instruction.branchType = DISASM_BRANCH_CALL;
@@ -227,7 +220,7 @@ typedef struct {
                     // jalr rs = jalr ra, rs, 0
                     strcpy(disasm->instruction.mnemonic, "jalr");
                     disasm->operand[0].type = DISASM_OPERAND_REGISTER_TYPE;
-                    disasm->operand[0].type |= getRegMask(src_reg);
+                    disasm->operand[0].type |= getRegMask(src1_reg);
                     disasm->operand[0].accessMode = DISASM_ACCESS_READ;
                     disasm->operand[0].isBranchDestination = 1;
                     disasm->instruction.branchType = DISASM_BRANCH_CALL;
@@ -237,14 +230,14 @@ typedef struct {
                 // jalr rs, imm
                 strcpy(disasm->instruction.mnemonic, "jalr");
                 disasm->operand[0].type = DISASM_OPERAND_MEMORY_TYPE;
-                disasm->operand[0].type |= getRegMask(src_reg);
-                disasm->operand[0].memory.baseRegistersMask = getRegMask(src_reg);
-                disasm->operand[0].memory.displacement = imm;
+                disasm->operand[0].type |= getRegMask(src1_reg);
+                disasm->operand[0].memory.baseRegistersMask = getRegMask(src1_reg);
+                disasm->operand[0].memory.displacement = getItypeImmediate(insncode);
                 disasm->operand[0].memory.scale = 1;
                 disasm->operand[0].accessMode = DISASM_ACCESS_READ;
                 disasm->operand[0].isBranchDestination = 1;
                 disasm->instruction.branchType = DISASM_BRANCH_CALL;
-                disasm->instruction.addressValue = (Address) imm + disasm->virtualAddr /* + src_reg */;
+                disasm->instruction.addressValue = (Address) getItypeImmediate(insncode) + disasm->virtualAddr /* + src1_reg */;
             }
             if (disasm->instruction.mnemonic[0] == 0) {
                 // jalr rd, rs, imm
@@ -253,29 +246,24 @@ typedef struct {
                 disasm->operand[0].type |= getRegMask(dest_reg);
                 disasm->operand[0].accessMode = DISASM_ACCESS_WRITE;
                 disasm->operand[1].type = DISASM_OPERAND_MEMORY_TYPE;
-                disasm->operand[1].type |= getRegMask(src_reg);
-                disasm->operand[1].memory.baseRegistersMask = getRegMask(src_reg);
-                disasm->operand[1].memory.displacement = imm;
+                disasm->operand[1].type |= getRegMask(src1_reg);
+                disasm->operand[1].memory.baseRegistersMask = getRegMask(src1_reg);
+                disasm->operand[1].memory.displacement = getItypeImmediate(insncode);
                 disasm->operand[1].memory.scale = 1;
                 disasm->operand[1].accessMode = DISASM_ACCESS_READ;
                 disasm->operand[1].isBranchDestination = 1;
                 disasm->instruction.branchType = DISASM_BRANCH_CALL;
-                disasm->instruction.addressValue = (Address) imm + disasm->virtualAddr /* + src_reg */;
+                disasm->instruction.addressValue = (Address) getItypeImmediate(insncode) + disasm->virtualAddr /* + src1_reg */;
             }
-        }
             break;
 
-        case 0b0010011 /* OP-IMM */:
-            if ((disasm->virtualAddr & 0xffffffff) == 0x80000018) {
-                NSObject <HPHopperServices> *services = _cpu.hopperServices;
-                [services logMessage:[NSString stringWithFormat:@"funct3: %d, rd: %d, rs: %d, imm: %0x", funct3, dest_reg, src_reg, getItypeImmediate(insncode)]];
-            }
+        case OPCODE_OPIMM /* OP-IMM */:
             switch (funct3) {
                 case 0b000 /* addi */:
-                    if (dest_reg == src_reg && dest_reg == 0 && getItypeImmediate(insncode) == 0) {
+                    if (dest_reg == src1_reg && dest_reg == 0 && getItypeImmediate(insncode) == 0) {
                         // addi zero, zero, 0
                         strcpy(disasm->instruction.mnemonic, "nop");
-                    } else if (dest_reg != src_reg && src_reg == 0) {
+                    } else if (dest_reg != src1_reg && src1_reg == 0) {
                         // addi rd, zero, imm
                         strcpy(disasm->instruction.mnemonic, "li");
                         disasm->operand[0].type = DISASM_OPERAND_REGISTER_TYPE;
@@ -291,7 +279,7 @@ typedef struct {
                         disasm->operand[0].type |= getRegMask(dest_reg);
                         disasm->operand[0].accessMode = DISASM_ACCESS_WRITE;
                         disasm->operand[1].type = DISASM_OPERAND_REGISTER_TYPE;
-                        disasm->operand[1].type |= getRegMask(src_reg);
+                        disasm->operand[1].type |= getRegMask(src1_reg);
                         disasm->operand[1].accessMode = DISASM_ACCESS_READ;
                     } else {
                         strcpy(disasm->instruction.mnemonic, "addi");
@@ -299,17 +287,54 @@ typedef struct {
                         disasm->operand[0].type |= getRegMask(dest_reg);
                         disasm->operand[0].accessMode = DISASM_ACCESS_WRITE;
                         disasm->operand[1].type = DISASM_OPERAND_REGISTER_TYPE;
-                        disasm->operand[1].type |= getRegMask(src_reg);
+                        disasm->operand[1].type |= getRegMask(src1_reg);
                         disasm->operand[1].accessMode = DISASM_ACCESS_READ;
                         disasm->operand[2].type = DISASM_OPERAND_CONSTANT_TYPE;
                         disasm->operand[2].immediateValue = getItypeImmediate(insncode);
                         disasm->operand[2].accessMode = DISASM_ACCESS_READ;
                     }
                     break;
-
+                case 0x001 /* slli/sll*/:
+                    switch (funct7) {
+                        case 0b0000000:
+                            //strcpy(disasm->instruction.mnemonic, "sll(i)");
+                            break;
+                    }
+                    break;
                 case 0b010 /* slti */:
+                    strcpy(disasm->instruction.mnemonic, "slti");
+                    disasm->operand[0].type = DISASM_OPERAND_REGISTER_TYPE;
+                    disasm->operand[0].type |= getRegMask(dest_reg);
+                    disasm->operand[0].accessMode = DISASM_ACCESS_WRITE;
+                    disasm->operand[1].type = DISASM_OPERAND_REGISTER_TYPE;
+                    disasm->operand[1].type |= getRegMask(src1_reg);
+                    disasm->operand[1].accessMode = DISASM_ACCESS_READ;
+                    disasm->operand[2].type = DISASM_OPERAND_CONSTANT_TYPE;
+                    disasm->operand[2].immediateValue = getItypeImmediate(insncode);
+                    disasm->operand[2].accessMode = DISASM_ACCESS_READ;
                     break;
                 case 0b011 /* sltiu */:
+                    if (getItypeImmediate(insncode) == 1) {
+                        //  seqz rd, rs = sltiu rd, rs1, 1
+                        strcpy(disasm->instruction.mnemonic, "seqz");
+                        disasm->operand[0].type = DISASM_OPERAND_REGISTER_TYPE;
+                        disasm->operand[0].type |= getRegMask(dest_reg);
+                        disasm->operand[0].accessMode = DISASM_ACCESS_WRITE;
+                        disasm->operand[1].type = DISASM_OPERAND_REGISTER_TYPE;
+                        disasm->operand[1].type |= getRegMask(src1_reg);
+                        disasm->operand[1].accessMode = DISASM_ACCESS_READ;
+                    } else {
+                        strcpy(disasm->instruction.mnemonic, "sltiu");
+                        disasm->operand[0].type = DISASM_OPERAND_REGISTER_TYPE;
+                        disasm->operand[0].type |= getRegMask(dest_reg);
+                        disasm->operand[0].accessMode = DISASM_ACCESS_WRITE;
+                        disasm->operand[1].type = DISASM_OPERAND_REGISTER_TYPE;
+                        disasm->operand[1].type |= getRegMask(src1_reg);
+                        disasm->operand[1].accessMode = DISASM_ACCESS_READ;
+                        disasm->operand[2].type = DISASM_OPERAND_CONSTANT_TYPE;
+                        disasm->operand[2].immediateValue = getItypeImmediate(insncode);
+                        disasm->operand[2].accessMode = DISASM_ACCESS_READ;
+                    }
                     break;
                 case 0b111 /* andi */:
                     break;
@@ -318,23 +343,155 @@ typedef struct {
                 case 0b100 /* xori */:
                     break;
             }
+            break;
 
-        case 0b1100011 /* BRANCH */:
+        case OPCODE_BRANCH /* BRANCH */:
             switch (funct3) {
-                case 0b000 /* BEQ */:
+                case 0b000 /* beq */:
+                    if (src2_reg == 0 /* zero */) {
+                        strcpy(disasm->instruction.mnemonic, "beqz");
+                        disasm->operand[0].type = DISASM_OPERAND_REGISTER_TYPE;
+                        disasm->operand[0].type |= getRegMask(src1_reg);
+                        disasm->operand[0].accessMode = DISASM_ACCESS_WRITE;
+                        disasm->operand[1].type = DISASM_OPERAND_MEMORY_TYPE | DISASM_OPERAND_RELATIVE;
+                        disasm->operand[1].memory.displacement = getBtypeImmediate(insncode);
+                        disasm->operand[1].accessMode = DISASM_ACCESS_READ;
+                        disasm->instruction.branchType = DISASM_BRANCH_CALL;
+                        disasm->instruction.addressValue = (Address) getItypeImmediate(insncode) + disasm->virtualAddr /* + src1_reg */;
+                        disasm->instruction.branchType = DISASM_BRANCH_JE;
+                    } else {
+                        strcpy(disasm->instruction.mnemonic, "beq");
+                        disasm->operand[0].type = DISASM_OPERAND_REGISTER_TYPE;
+                        disasm->operand[0].type |= getRegMask(src1_reg);
+                        disasm->operand[0].accessMode = DISASM_ACCESS_WRITE;
+                        disasm->operand[1].type = DISASM_OPERAND_REGISTER_TYPE;
+                        disasm->operand[1].type |= getRegMask(src2_reg);
+                        disasm->operand[1].accessMode = DISASM_ACCESS_WRITE;
+                        disasm->operand[2].type = DISASM_OPERAND_MEMORY_TYPE | DISASM_OPERAND_RELATIVE;
+                        disasm->operand[2].memory.displacement = getBtypeImmediate(insncode);
+                        disasm->operand[2].accessMode = DISASM_ACCESS_READ;
+                        disasm->instruction.branchType = DISASM_BRANCH_CALL;
+                        disasm->instruction.addressValue = (Address) getItypeImmediate(insncode) + disasm->virtualAddr /* + src1_reg */;
+                        disasm->instruction.branchType = DISASM_BRANCH_JE;
+                    }
                     break;
-                case 0b001 /* BNE */:
+                case 0b001 /* bne */:
+                    if (src2_reg == 0 /* zero */) {
+                        strcpy(disasm->instruction.mnemonic, "bnez");
+                        disasm->operand[0].type = DISASM_OPERAND_REGISTER_TYPE;
+                        disasm->operand[0].type |= getRegMask(src1_reg);
+                        disasm->operand[0].accessMode = DISASM_ACCESS_WRITE;
+                        disasm->operand[1].type = DISASM_OPERAND_MEMORY_TYPE | DISASM_OPERAND_RELATIVE;
+                        disasm->operand[1].memory.displacement = getBtypeImmediate(insncode);
+                        disasm->operand[1].accessMode = DISASM_ACCESS_READ;
+                        disasm->instruction.branchType = DISASM_BRANCH_CALL;
+                        disasm->instruction.addressValue = (Address) getItypeImmediate(insncode) + disasm->virtualAddr /* + src1_reg */;
+                        disasm->instruction.branchType = DISASM_BRANCH_JNE;
+                    } else {
+                        strcpy(disasm->instruction.mnemonic, "bne");
+                        disasm->operand[0].type = DISASM_OPERAND_REGISTER_TYPE;
+                        disasm->operand[0].type |= getRegMask(src1_reg);
+                        disasm->operand[0].accessMode = DISASM_ACCESS_WRITE;
+                        disasm->operand[1].type = DISASM_OPERAND_REGISTER_TYPE;
+                        disasm->operand[1].type |= getRegMask(src2_reg);
+                        disasm->operand[1].accessMode = DISASM_ACCESS_WRITE;
+                        disasm->operand[2].type = DISASM_OPERAND_MEMORY_TYPE | DISASM_OPERAND_RELATIVE;
+                        disasm->operand[2].memory.displacement = getBtypeImmediate(insncode);
+                        disasm->operand[2].accessMode = DISASM_ACCESS_READ;
+                        disasm->instruction.branchType = DISASM_BRANCH_CALL;
+                        disasm->instruction.addressValue = (Address) getItypeImmediate(insncode) + disasm->virtualAddr /* + src1_reg */;
+                        disasm->instruction.branchType = DISASM_BRANCH_JNE;
+                    }
                     break;
-                case 0b100 /* BLT */:
+                case 0b100 /* blt */:
+                    if (src2_reg == 0 /* zero */) {
+                        strcpy(disasm->instruction.mnemonic, "bltz");
+                        disasm->operand[0].type = DISASM_OPERAND_REGISTER_TYPE;
+                        disasm->operand[0].type |= getRegMask(src1_reg);
+                        disasm->operand[0].accessMode = DISASM_ACCESS_WRITE;
+                        disasm->operand[1].type = DISASM_OPERAND_MEMORY_TYPE | DISASM_OPERAND_RELATIVE;
+                        disasm->operand[1].memory.displacement = getBtypeImmediate(insncode);
+                        disasm->operand[1].accessMode = DISASM_ACCESS_READ;
+                        disasm->instruction.branchType = DISASM_BRANCH_CALL;
+                        disasm->instruction.addressValue = (Address) getItypeImmediate(insncode) + disasm->virtualAddr /* + src1_reg */;
+                        disasm->instruction.branchType = DISASM_BRANCH_JNE;
+                    } else {
+                        strcpy(disasm->instruction.mnemonic, "blt");
+                        disasm->operand[0].type = DISASM_OPERAND_REGISTER_TYPE;
+                        disasm->operand[0].type |= getRegMask(src1_reg);
+                        disasm->operand[0].accessMode = DISASM_ACCESS_WRITE;
+                        disasm->operand[1].type = DISASM_OPERAND_REGISTER_TYPE;
+                        disasm->operand[1].type |= getRegMask(src2_reg);
+                        disasm->operand[1].accessMode = DISASM_ACCESS_WRITE;
+                        disasm->operand[2].type = DISASM_OPERAND_MEMORY_TYPE | DISASM_OPERAND_RELATIVE;
+                        disasm->operand[2].memory.displacement = getBtypeImmediate(insncode);
+                        disasm->operand[2].accessMode = DISASM_ACCESS_READ;
+                        disasm->instruction.branchType = DISASM_BRANCH_CALL;
+                        disasm->instruction.addressValue = (Address) getItypeImmediate(insncode) + disasm->virtualAddr /* + src1_reg */;
+                        disasm->instruction.branchType = DISASM_BRANCH_JNE;
+                    }
                     break;
-                case 0b110 /* BLTU */:
+                case 0b110 /* bltu */:
+                    strcpy(disasm->instruction.mnemonic, "bltu");
+                    disasm->operand[0].type = DISASM_OPERAND_REGISTER_TYPE;
+                    disasm->operand[0].type |= getRegMask(src1_reg);
+                    disasm->operand[0].accessMode = DISASM_ACCESS_WRITE;
+                    disasm->operand[1].type = DISASM_OPERAND_REGISTER_TYPE;
+                    disasm->operand[1].type |= getRegMask(src2_reg);
+                    disasm->operand[1].accessMode = DISASM_ACCESS_WRITE;
+                    disasm->operand[2].type = DISASM_OPERAND_MEMORY_TYPE | DISASM_OPERAND_RELATIVE;
+                    disasm->operand[2].memory.displacement = getBtypeImmediate(insncode);
+                    disasm->operand[2].accessMode = DISASM_ACCESS_READ;
+                    disasm->instruction.branchType = DISASM_BRANCH_CALL;
+                    disasm->instruction.addressValue = (Address) getItypeImmediate(insncode) + disasm->virtualAddr /* + src1_reg */;
+                    disasm->instruction.branchType = DISASM_BRANCH_JNE;
                     break;
-                case 0b101 /* BGE */:
+                case 0b101 /* bge */:
+                    if (src2_reg == 0 /* zero */) {
+                        strcpy(disasm->instruction.mnemonic, "bgez");
+                        disasm->operand[0].type = DISASM_OPERAND_REGISTER_TYPE;
+                        disasm->operand[0].type |= getRegMask(src1_reg);
+                        disasm->operand[0].accessMode = DISASM_ACCESS_WRITE;
+                        disasm->operand[1].type = DISASM_OPERAND_MEMORY_TYPE | DISASM_OPERAND_RELATIVE;
+                        disasm->operand[1].memory.displacement = getBtypeImmediate(insncode);
+                        disasm->operand[1].accessMode = DISASM_ACCESS_READ;
+                        disasm->instruction.branchType = DISASM_BRANCH_CALL;
+                        disasm->instruction.addressValue = (Address) getItypeImmediate(insncode) + disasm->virtualAddr /* + src1_reg */;
+                        disasm->instruction.branchType = DISASM_BRANCH_JNE;
+                    } else {
+                        strcpy(disasm->instruction.mnemonic, "bge");
+                        disasm->operand[0].type = DISASM_OPERAND_REGISTER_TYPE;
+                        disasm->operand[0].type |= getRegMask(src1_reg);
+                        disasm->operand[0].accessMode = DISASM_ACCESS_WRITE;
+                        disasm->operand[1].type = DISASM_OPERAND_REGISTER_TYPE;
+                        disasm->operand[1].type |= getRegMask(src2_reg);
+                        disasm->operand[1].accessMode = DISASM_ACCESS_WRITE;
+                        disasm->operand[2].type = DISASM_OPERAND_MEMORY_TYPE | DISASM_OPERAND_RELATIVE;
+                        disasm->operand[2].memory.displacement = getBtypeImmediate(insncode);
+                        disasm->operand[2].accessMode = DISASM_ACCESS_READ;
+                        disasm->instruction.branchType = DISASM_BRANCH_CALL;
+                        disasm->instruction.addressValue = (Address) getItypeImmediate(insncode) + disasm->virtualAddr /* + src1_reg */;
+                        disasm->instruction.branchType = DISASM_BRANCH_JNE;
+                    }
                     break;
-                case 0b111 /* BGEU */:
+                case 0b111 /* bgeu */:
+                    strcpy(disasm->instruction.mnemonic, "bgeu");
+                    disasm->operand[0].type = DISASM_OPERAND_REGISTER_TYPE;
+                    disasm->operand[0].type |= getRegMask(src1_reg);
+                    disasm->operand[0].accessMode = DISASM_ACCESS_WRITE;
+                    disasm->operand[1].type = DISASM_OPERAND_REGISTER_TYPE;
+                    disasm->operand[1].type |= getRegMask(src2_reg);
+                    disasm->operand[1].accessMode = DISASM_ACCESS_WRITE;
+                    disasm->operand[2].type = DISASM_OPERAND_MEMORY_TYPE | DISASM_OPERAND_RELATIVE;
+                    disasm->operand[2].memory.displacement = getBtypeImmediate(insncode);
+                    disasm->operand[2].accessMode = DISASM_ACCESS_READ;
+                    disasm->instruction.branchType = DISASM_BRANCH_CALL;
+                    disasm->instruction.addressValue = (Address) getItypeImmediate(insncode) + disasm->virtualAddr /* + src1_reg */;
+                    disasm->instruction.branchType = DISASM_BRANCH_JNE;
                     break;
             }
             break;
+
         default:
             break;
     }
