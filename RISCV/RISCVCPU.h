@@ -34,6 +34,9 @@ typedef NS_ENUM(NSUInteger, RISCVRegClass) {
     RegClass_RISCV_Cnt
 };
 
+#define REG_MASK(cls, reg) \
+    (DISASM_BUILD_REGISTER_CLS_MASK(cls) | DISASM_BUILD_REGISTER_INDEX_MASK(reg))
+
 static DisasmOperandType reg_masks_32[] = {
         REG_MASK(RegClass_RISCV_ABI, 0) /* zero */,
         REG_MASK(RegClass_RISCV_ABI, 1) /* ra */,
@@ -49,10 +52,10 @@ static DisasmOperandType reg_masks_32[] = {
         REG_MASK(RegClass_RISCV_RetVal, 1) /* a1 */,
         REG_MASK(RegClass_RISCV_FuncArg, 0) /* a2 */,
         REG_MASK(RegClass_RISCV_FuncArg, 1) /* a3 */,
-        REG_MASK(RegClass_RISCV_FuncArg, 1) /* a4 */,
-        REG_MASK(RegClass_RISCV_FuncArg, 1) /* a5 */,
-        REG_MASK(RegClass_RISCV_FuncArg, 1) /* a6 */,
-        REG_MASK(RegClass_RISCV_FuncArg, 1) /* a7 */,
+        REG_MASK(RegClass_RISCV_FuncArg, 2) /* a4 */,
+        REG_MASK(RegClass_RISCV_FuncArg, 3) /* a5 */,
+        REG_MASK(RegClass_RISCV_FuncArg, 4) /* a6 */,
+        REG_MASK(RegClass_RISCV_FuncArg, 5) /* a7 */,
         REG_MASK(RegClass_RISCV_Saved, 0) /* s2 */,
         REG_MASK(RegClass_RISCV_Saved, 1) /* s3 */,
         REG_MASK(RegClass_RISCV_Saved, 2) /* s4 */,
@@ -84,10 +87,10 @@ static DisasmOperandType reg_masks_64[] = {
         REG_MASK(RegClass_RISCV_RetVal64, 1) /* a1_64 */,
         REG_MASK(RegClass_RISCV_FuncArg64, 0) /* a2_64 */,
         REG_MASK(RegClass_RISCV_FuncArg64, 1) /* a3_64 */,
-        REG_MASK(RegClass_RISCV_FuncArg64, 1) /* a4_64 */,
-        REG_MASK(RegClass_RISCV_FuncArg64, 1) /* a5_64 */,
-        REG_MASK(RegClass_RISCV_FuncArg64, 1) /* a6_64 */,
-        REG_MASK(RegClass_RISCV_FuncArg64, 1) /* a7_64 */,
+        REG_MASK(RegClass_RISCV_FuncArg64, 2) /* a4_64 */,
+        REG_MASK(RegClass_RISCV_FuncArg64, 3) /* a5_64 */,
+        REG_MASK(RegClass_RISCV_FuncArg64, 4) /* a6_64 */,
+        REG_MASK(RegClass_RISCV_FuncArg64, 5) /* a7_64 */,
         REG_MASK(RegClass_RISCV_Saved64, 0) /* s2_64 */,
         REG_MASK(RegClass_RISCV_Saved64, 1) /* s3_64 */,
         REG_MASK(RegClass_RISCV_Saved64, 2) /* s4_64 */,
