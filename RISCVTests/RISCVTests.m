@@ -33,7 +33,10 @@
     XCTAssertEqual(getItypeImmediate(0x4a018193), 0x4a0);
     XCTAssertEqual(getItypeImmediate(0x088300e7), 136);
     XCTAssertEqual(getItypeImmediate(0x6780006f), 0x800006c0 - 0x80000048);
-    XCTAssertEqual(getItypeImmediate(0x6710006f), 0x670, @"clearing LSB");
+}
+
+- (void)testGetITypeImmediateLSBcleared {
+    XCTAssertEqual(getItypeImmediateLSBcleared(0x6710006f), 0x670, @"clearing LSB");
 }
 
 - (void)testGetUJTypeImmediate {
@@ -47,6 +50,12 @@
 
 - (void)testGetBTypeImmediate {
     XCTAssertEqual(getBtypeImmediate(0x04051063), 0x40);
+}
+
+- (void)testGetShamt64 {
+    XCTAssertEqual(getShamt64(0x02049493), 0x20);
+    XCTAssertEqual(getShamt64(0x01d4d493), 0x1d);
+    XCTAssertEqual(getShamt64(0x4056d693), 0x5);
 }
 
 

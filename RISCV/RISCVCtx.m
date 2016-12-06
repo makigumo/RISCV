@@ -40,6 +40,7 @@ DisasmOperandType (*getRegMask)(uint8_t) = &getRegMask32;
         disasm->operand[i].type = DISASM_OPERAND_NO_OPERAND;
     }
     disasm->instruction.addressValue = 0;
+    disasm->instruction.branchType = DISASM_BRANCH_NONE;
 }
 
 // Analysis
@@ -128,6 +129,9 @@ DisasmOperandType (*getRegMask)(uint8_t) = &getRegMask32;
     // all instructions are 32 bit
     int len = 4;
     disasm->instruction.length = 4;
+    disasm->instruction.branchType = DISASM_BRANCH_NONE;
+    disasm->instruction.addressValue = 0;
+    disasm->instruction.pcRegisterValue = disasm->virtualAddr + 4;
     uint8_t dest_reg = getRD(insncode);
     uint8_t src1_reg = getRS1(insncode);
     uint8_t src2_reg = getRS2(insncode);
@@ -135,9 +139,10 @@ DisasmOperandType (*getRegMask)(uint8_t) = &getRegMask32;
     uint8_t funct7 = getFunct7(insncode);
 
 #if NDEBUG
-    if ((disasm->virtualAddr & 0xffffffff) == 0x8000000c) {
+    if ((disasm->virtualAddr & 0xffffffff) == 0x80000400) {
         NSObject <HPHopperServices> *services = _cpu.hopperServices;
-        [services logMessage:[NSString stringWithFormat:@"opcode: %d, funct3: %d, rd: %d, rs1: %d, rs2: %d, imm: %0x", opcode, funct3, dest_reg, src1_reg, src2_reg, getItypeImmediate(insncode)]];
+        [services logMessage:[NSString stringWithFormat:@"opcode:%d, funct3:%d, rd:%d, rs1:%d, rs2:%d, imm:%0x, funct7:%0x, shamt:%0x",
+                                                        opcode, funct3, dest_reg, src1_reg, src2_reg, getItypeImmediate(insncode), funct7, getShamt(insncode)]];
     }
 #endif
 
@@ -183,7 +188,7 @@ DisasmOperandType (*getRegMask)(uint8_t) = &getRegMask32;
                 disasm->operand[0].immediateValue = getUJtypeImmediate(insncode);
                 disasm->operand[0].accessMode = DISASM_ACCESS_READ;
                 disasm->operand[0].isBranchDestination = 1;
-                disasm->instruction.branchType = DISASM_BRANCH_JMP;
+                disasm->instruction.branchType = DISASM_BRANCH_CALL;
                 disasm->instruction.addressValue = disasm->virtualAddr + disasm->operand[0].immediateValue;
             } else {
                 // jal rd, offset
@@ -194,7 +199,7 @@ DisasmOperandType (*getRegMask)(uint8_t) = &getRegMask32;
                 disasm->operand[1].immediateValue = getUJtypeImmediate(insncode);
                 disasm->operand[1].accessMode = DISASM_ACCESS_READ;
                 disasm->operand[1].isBranchDestination = 1;
-                disasm->instruction.branchType = DISASM_BRANCH_JMP;
+                disasm->instruction.branchType = DISASM_BRANCH_CALL;
                 disasm->instruction.addressValue = disasm->virtualAddr + disasm->operand[0].immediateValue;
             }
             break;
@@ -281,36 +286,27 @@ DisasmOperandType (*getRegMask)(uint8_t) = &getRegMask32;
                         disasm->operand[1].type |= getRegMask(src1_reg);
                         disasm->operand[1].accessMode = DISASM_ACCESS_READ;
                     } else {
-                        strcpy(disasm->instruction.mnemonic, "addi");
-                        disasm->operand[0].type = DISASM_OPERAND_REGISTER_TYPE;
-                        disasm->operand[0].type |= getRegMask(dest_reg);
-                        disasm->operand[0].accessMode = DISASM_ACCESS_WRITE;
-                        disasm->operand[1].type = DISASM_OPERAND_REGISTER_TYPE;
-                        disasm->operand[1].type |= getRegMask(src1_reg);
-                        disasm->operand[1].accessMode = DISASM_ACCESS_READ;
-                        disasm->operand[2].type = DISASM_OPERAND_CONSTANT_TYPE;
-                        disasm->operand[2].immediateValue = getItypeImmediate(insncode);
-                        disasm->operand[2].accessMode = DISASM_ACCESS_READ;
+                        populateOPIMM(disasm, insncode, "addi");
                     }
                     break;
-                case 0x001 /* slli/sll*/:
-                    switch (funct7) {
-                        case 0b0000000:
-                            //strcpy(disasm->instruction.mnemonic, "sll(i)");
-                            break;
+                case 0x001 /* slli */:
+                    if ([_file is32Bits]) {
+                        switch (funct7) {
+                            case 0b0000000:
+                                populateOPIMMShift(disasm, insncode, "slli");
+                                break;
+                        }
+                    } else {
+                        // 64 bits
+                        switch (getFunct6(insncode)) {
+                            case 0b000000:
+                                populateOPIMMShift64(disasm, insncode, "slli");
+                                break;
+                        }
                     }
                     break;
                 case 0b010 /* slti */:
-                    strcpy(disasm->instruction.mnemonic, "slti");
-                    disasm->operand[0].type = DISASM_OPERAND_REGISTER_TYPE;
-                    disasm->operand[0].type |= getRegMask(dest_reg);
-                    disasm->operand[0].accessMode = DISASM_ACCESS_WRITE;
-                    disasm->operand[1].type = DISASM_OPERAND_REGISTER_TYPE;
-                    disasm->operand[1].type |= getRegMask(src1_reg);
-                    disasm->operand[1].accessMode = DISASM_ACCESS_READ;
-                    disasm->operand[2].type = DISASM_OPERAND_CONSTANT_TYPE;
-                    disasm->operand[2].immediateValue = getItypeImmediate(insncode);
-                    disasm->operand[2].accessMode = DISASM_ACCESS_READ;
+                    populateOPIMM(disasm, insncode, "slti");
                     break;
                 case 0b011 /* sltiu */:
                     if (getItypeImmediate(insncode) == 1) {
@@ -323,23 +319,51 @@ DisasmOperandType (*getRegMask)(uint8_t) = &getRegMask32;
                         disasm->operand[1].type |= getRegMask(src1_reg);
                         disasm->operand[1].accessMode = DISASM_ACCESS_READ;
                     } else {
-                        strcpy(disasm->instruction.mnemonic, "sltiu");
+                        populateOPIMM(disasm, insncode, "sltiu");
+                    }
+                    break;
+                case 0b100 /* xori */:
+                    if (getItypeImmediate(insncode) == -1) {
+                        // not rd, rs = xori rd, rs, -1
+                        strcpy(disasm->instruction.mnemonic, "not");
                         disasm->operand[0].type = DISASM_OPERAND_REGISTER_TYPE;
                         disasm->operand[0].type |= getRegMask(dest_reg);
                         disasm->operand[0].accessMode = DISASM_ACCESS_WRITE;
                         disasm->operand[1].type = DISASM_OPERAND_REGISTER_TYPE;
                         disasm->operand[1].type |= getRegMask(src1_reg);
                         disasm->operand[1].accessMode = DISASM_ACCESS_READ;
-                        disasm->operand[2].type = DISASM_OPERAND_CONSTANT_TYPE;
-                        disasm->operand[2].immediateValue = getItypeImmediate(insncode);
-                        disasm->operand[2].accessMode = DISASM_ACCESS_READ;
+                    } else {
+                        populateOPIMM(disasm, insncode, "xori");
                     }
                     break;
-                case 0b111 /* andi */:
+                case 0b101 /* srli/srai */:
+                    if ([_file is32Bits]) {
+                        switch (funct7) {
+                            case 0b0000000:
+                                populateOPIMMShift(disasm, insncode, "srli");
+                                break;
+                            case 0b0100000:
+                                populateOPIMMShift(disasm, insncode, "srai");
+                                break;
+                        }
+                    }
+                    else {
+                        // 64 bits
+                        switch (getFunct6(insncode)) {
+                            case 0b000000:
+                                populateOPIMMShift64(disasm, insncode, "srli");
+                                break;
+                            case 0b010000:
+                                populateOPIMMShift64(disasm, insncode, "srai");
+                                break;
+                        }
+                    }
                     break;
                 case 0b110 /* ori */:
+                    populateOPIMM(disasm, insncode, "ori");
                     break;
-                case 0b100 /* xori */:
+                case 0b111 /* andi */:
+                    populateOPIMM(disasm, insncode, "andi");
                     break;
             }
             break;
@@ -352,8 +376,8 @@ DisasmOperandType (*getRegMask)(uint8_t) = &getRegMask32;
                         disasm->operand[0].type = DISASM_OPERAND_REGISTER_TYPE;
                         disasm->operand[0].type |= getRegMask(src1_reg);
                         disasm->operand[0].accessMode = DISASM_ACCESS_READ;
-                        disasm->operand[1].type = DISASM_OPERAND_MEMORY_TYPE | DISASM_OPERAND_RELATIVE;
-                        disasm->operand[1].memory.displacement = getBtypeImmediate(insncode);
+                        disasm->operand[1].type = DISASM_OPERAND_CONSTANT_TYPE | DISASM_OPERAND_RELATIVE;
+                        disasm->operand[1].immediateValue = getBtypeImmediate(insncode);
                         disasm->operand[1].accessMode = DISASM_ACCESS_READ;
                         disasm->operand[1].isBranchDestination = 1;
                         disasm->instruction.addressValue = (Address) getBtypeImmediate(insncode) + disasm->virtualAddr /* + src1_reg */;
@@ -366,8 +390,8 @@ DisasmOperandType (*getRegMask)(uint8_t) = &getRegMask32;
                         disasm->operand[1].type = DISASM_OPERAND_REGISTER_TYPE;
                         disasm->operand[1].type |= getRegMask(src2_reg);
                         disasm->operand[1].accessMode = DISASM_ACCESS_READ;
-                        disasm->operand[2].type = DISASM_OPERAND_MEMORY_TYPE | DISASM_OPERAND_RELATIVE;
-                        disasm->operand[2].memory.displacement = getBtypeImmediate(insncode);
+                        disasm->operand[2].type = DISASM_OPERAND_CONSTANT_TYPE | DISASM_OPERAND_RELATIVE;
+                        disasm->operand[2].immediateValue = getBtypeImmediate(insncode);
                         disasm->operand[2].accessMode = DISASM_ACCESS_READ;
                         disasm->operand[2].isBranchDestination = 1;
                         disasm->instruction.addressValue = (Address) getBtypeImmediate(insncode) + disasm->virtualAddr /* + src1_reg */;
@@ -380,8 +404,8 @@ DisasmOperandType (*getRegMask)(uint8_t) = &getRegMask32;
                         disasm->operand[0].type = DISASM_OPERAND_REGISTER_TYPE;
                         disasm->operand[0].type |= getRegMask(src1_reg);
                         disasm->operand[0].accessMode = DISASM_ACCESS_READ;
-                        disasm->operand[1].type = DISASM_OPERAND_MEMORY_TYPE | DISASM_OPERAND_RELATIVE;
-                        disasm->operand[1].memory.displacement = getBtypeImmediate(insncode);
+                        disasm->operand[1].type = DISASM_OPERAND_CONSTANT_TYPE | DISASM_OPERAND_RELATIVE;
+                        disasm->operand[1].immediateValue = getBtypeImmediate(insncode);
                         disasm->operand[1].accessMode = DISASM_ACCESS_READ;
                         disasm->operand[1].isBranchDestination = 1;
                         disasm->instruction.addressValue = (Address) getBtypeImmediate(insncode) + disasm->virtualAddr /* + src1_reg */;
@@ -394,8 +418,8 @@ DisasmOperandType (*getRegMask)(uint8_t) = &getRegMask32;
                         disasm->operand[1].type = DISASM_OPERAND_REGISTER_TYPE;
                         disasm->operand[1].type |= getRegMask(src2_reg);
                         disasm->operand[1].accessMode = DISASM_ACCESS_WRITE;
-                        disasm->operand[2].type = DISASM_OPERAND_MEMORY_TYPE | DISASM_OPERAND_RELATIVE;
-                        disasm->operand[2].memory.displacement = getBtypeImmediate(insncode);
+                        disasm->operand[2].type = DISASM_OPERAND_CONSTANT_TYPE | DISASM_OPERAND_RELATIVE;
+                        disasm->operand[2].immediateValue = getBtypeImmediate(insncode);
                         disasm->operand[2].accessMode = DISASM_ACCESS_READ;
                         disasm->operand[2].isBranchDestination = 1;
                         disasm->instruction.addressValue = (Address) getBtypeImmediate(insncode) + disasm->virtualAddr /* + src1_reg */;
@@ -408,8 +432,8 @@ DisasmOperandType (*getRegMask)(uint8_t) = &getRegMask32;
                         disasm->operand[0].type = DISASM_OPERAND_REGISTER_TYPE;
                         disasm->operand[0].type |= getRegMask(src1_reg);
                         disasm->operand[0].accessMode = DISASM_ACCESS_READ;
-                        disasm->operand[1].type = DISASM_OPERAND_MEMORY_TYPE | DISASM_OPERAND_RELATIVE;
-                        disasm->operand[1].memory.displacement = getBtypeImmediate(insncode);
+                        disasm->operand[1].type = DISASM_OPERAND_CONSTANT_TYPE | DISASM_OPERAND_RELATIVE;
+                        disasm->operand[1].immediateValue = getBtypeImmediate(insncode);
                         disasm->operand[1].accessMode = DISASM_ACCESS_READ;
                         disasm->operand[1].isBranchDestination = 1;
                         disasm->instruction.addressValue = (Address) getBtypeImmediate(insncode) + disasm->virtualAddr /* + src1_reg */;
@@ -422,8 +446,8 @@ DisasmOperandType (*getRegMask)(uint8_t) = &getRegMask32;
                         disasm->operand[1].type = DISASM_OPERAND_REGISTER_TYPE;
                         disasm->operand[1].type |= getRegMask(src2_reg);
                         disasm->operand[1].accessMode = DISASM_ACCESS_READ;
-                        disasm->operand[2].type = DISASM_OPERAND_MEMORY_TYPE | DISASM_OPERAND_RELATIVE;
-                        disasm->operand[2].memory.displacement = getBtypeImmediate(insncode);
+                        disasm->operand[2].type = DISASM_OPERAND_CONSTANT_TYPE | DISASM_OPERAND_RELATIVE;
+                        disasm->operand[2].immediateValue = getBtypeImmediate(insncode);
                         disasm->operand[2].accessMode = DISASM_ACCESS_READ;
                         disasm->operand[2].isBranchDestination = 1;
                         disasm->instruction.addressValue = (Address) getBtypeImmediate(insncode) + disasm->virtualAddr /* + src1_reg */;
@@ -438,8 +462,8 @@ DisasmOperandType (*getRegMask)(uint8_t) = &getRegMask32;
                     disasm->operand[1].type = DISASM_OPERAND_REGISTER_TYPE;
                     disasm->operand[1].type |= getRegMask(src2_reg);
                     disasm->operand[1].accessMode = DISASM_ACCESS_READ;
-                    disasm->operand[2].type = DISASM_OPERAND_MEMORY_TYPE | DISASM_OPERAND_RELATIVE;
-                    disasm->operand[2].memory.displacement = getBtypeImmediate(insncode);
+                    disasm->operand[2].type = DISASM_OPERAND_CONSTANT_TYPE | DISASM_OPERAND_RELATIVE;
+                    disasm->operand[2].immediateValue = getBtypeImmediate(insncode);
                     disasm->operand[2].accessMode = DISASM_ACCESS_READ;
                     disasm->operand[2].isBranchDestination = 1;
                     disasm->instruction.addressValue = (Address) getBtypeImmediate(insncode) + disasm->virtualAddr /* + src1_reg */;
@@ -451,8 +475,8 @@ DisasmOperandType (*getRegMask)(uint8_t) = &getRegMask32;
                         disasm->operand[0].type = DISASM_OPERAND_REGISTER_TYPE;
                         disasm->operand[0].type |= getRegMask(src1_reg);
                         disasm->operand[0].accessMode = DISASM_ACCESS_READ;
-                        disasm->operand[1].type = DISASM_OPERAND_MEMORY_TYPE | DISASM_OPERAND_RELATIVE;
-                        disasm->operand[1].memory.displacement = getBtypeImmediate(insncode);
+                        disasm->operand[1].type = DISASM_OPERAND_CONSTANT_TYPE | DISASM_OPERAND_RELATIVE;
+                        disasm->operand[1].immediateValue = getBtypeImmediate(insncode);
                         disasm->operand[1].accessMode = DISASM_ACCESS_READ;
                         disasm->operand[1].isBranchDestination = 1;
                         disasm->instruction.addressValue = (Address) getBtypeImmediate(insncode) + disasm->virtualAddr /* + src1_reg */;
@@ -465,8 +489,8 @@ DisasmOperandType (*getRegMask)(uint8_t) = &getRegMask32;
                         disasm->operand[1].type = DISASM_OPERAND_REGISTER_TYPE;
                         disasm->operand[1].type |= getRegMask(src2_reg);
                         disasm->operand[1].accessMode = DISASM_ACCESS_READ;
-                        disasm->operand[2].type = DISASM_OPERAND_MEMORY_TYPE | DISASM_OPERAND_RELATIVE;
-                        disasm->operand[2].memory.displacement = getBtypeImmediate(insncode);
+                        disasm->operand[2].type = DISASM_OPERAND_CONSTANT_TYPE | DISASM_OPERAND_RELATIVE;
+                        disasm->operand[2].immediateValue = getBtypeImmediate(insncode);
                         disasm->operand[2].accessMode = DISASM_ACCESS_READ;
                         disasm->operand[2].isBranchDestination = 1;
                         disasm->instruction.addressValue = (Address) getBtypeImmediate(insncode) + disasm->virtualAddr /* + src1_reg */;
@@ -481,8 +505,8 @@ DisasmOperandType (*getRegMask)(uint8_t) = &getRegMask32;
                     disasm->operand[1].type = DISASM_OPERAND_REGISTER_TYPE;
                     disasm->operand[1].type |= getRegMask(src2_reg);
                     disasm->operand[1].accessMode = DISASM_ACCESS_READ;
-                    disasm->operand[2].type = DISASM_OPERAND_MEMORY_TYPE | DISASM_OPERAND_RELATIVE;
-                    disasm->operand[2].memory.displacement = getBtypeImmediate(insncode);
+                    disasm->operand[2].type = DISASM_OPERAND_CONSTANT_TYPE | DISASM_OPERAND_RELATIVE;
+                    disasm->operand[2].immediateValue = getBtypeImmediate(insncode);
                     disasm->operand[2].accessMode = DISASM_ACCESS_READ;
                     disasm->operand[2].isBranchDestination = 1;
                     disasm->instruction.addressValue = (Address) getBtypeImmediate(insncode) + disasm->virtualAddr /* + src1_reg */;
@@ -528,6 +552,37 @@ DisasmOperandType (*getRegMask)(uint8_t) = &getRegMask32;
                             break;
                         case 0b101 /* sra */:
                             populateOP(disasm, insncode, "sra");
+                            break;
+                    }
+                    break;
+            }
+            break;
+
+        case OPCODE_OP32 /* OP-32 */:
+            switch (funct7) {
+                case 0b0000000:
+                    switch (funct3) {
+                        case 0b000 /* add */:
+                            populateOP(disasm, insncode, "addw");
+                            break;
+                        case 0b001 /* sll */:
+                            populateOP(disasm, insncode, "sllw");
+                            break;
+                        case 0b010 /* slt */:
+                            populateOP(disasm, insncode, "sltw");
+                            break;
+                        case 0b101 /* srl */:
+                            populateOP(disasm, insncode, "srlw");
+                            break;
+                    }
+                    break;
+                case 0b0100000:
+                    switch (funct3) {
+                        case 0b000 /* sub */:
+                            populateOP(disasm, insncode, "subw");
+                            break;
+                        case 0b101 /* sra */:
+                            populateOP(disasm, insncode, "sraw");
                             break;
                     }
                     break;
@@ -607,16 +662,15 @@ static inline int regIndexFromType(uint64_t type) {
 
     if (operand->type & DISASM_OPERAND_CONSTANT_TYPE) {
         if (operand->isBranchDestination) {
-            uint64_t value = (operand->type & DISASM_OPERAND_RELATIVE) ?
-                    disasm->virtualAddr + operand->immediateValue :
-                    (Address) operand->immediateValue;
-            NSString *symbol = [_file nameForVirtualAddress:value];
+            NSString *symbol = [_file nameForVirtualAddress:disasm->instruction.addressValue];
             if (symbol) {
-                [line appendName:symbol atAddress:value];
+                [line appendName:symbol atAddress:disasm->instruction.addressValue];
             } else {
                 // TODO is there a better way to get the local name (?)
-                [line appendLocalName:[NSString stringWithFormat:@"loc_%x", (int64_t) value]
-                            atAddress:(Address) value];
+                NSString *labelFormat = (bitsize == 32) ? @"loc_%x" : @"loc_%llx";
+                NSString *localLabel = [NSString stringWithFormat:labelFormat, disasm->instruction.addressValue];
+                [line appendLocalName:localLabel
+                            atAddress:(Address) disasm->instruction.addressValue];
             }
         } else {
             if (format == Format_Default) {
@@ -624,16 +678,12 @@ static inline int regIndexFromType(uint64_t type) {
                 if (operand->immediateValue > -100 && operand->immediateValue < 100) {
                     format = Format_Decimal;
                 }
+                if (operand->immediateValue < 0) {
+                    format |= Format_Signed;
+                }
             }
             [line appendRawString:@"#"];
-/*
-        uint64_t val = operand->type & DISASM_OPERAND_RELATIVE ?
-                disasm->virtualAddr + operand->immediateValue :
-                (Address) operand->immediateValue;
-*/
-            uint64_t val = (Address) operand->immediateValue;
-
-            [line append:[file formatNumber:val
+            [line append:[file formatNumber:(uint64_t) operand->immediateValue
                                          at:disasm->virtualAddr
                                 usingFormat:format
                                  andBitSize:bitsize]];
