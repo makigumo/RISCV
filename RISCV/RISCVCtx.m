@@ -14,15 +14,10 @@
     NSObject <HPDisassembledFile> *_file;
 }
 
-DisasmOperandType (*getRegMask)(uint8_t) = &getRegMask32;
-
 - (instancetype)initWithCPU:(RISCVCPU *)cpu andFile:(NSObject <HPDisassembledFile> *)file {
     if (self = [super init]) {
         _cpu = cpu;
         _file = file;
-        if ([_file is64Bits]) {
-            getRegMask = &getRegMask64;
-        }
     }
     return self;
 }
@@ -628,7 +623,7 @@ DisasmOperandType (*getRegMask)(uint8_t) = &getRegMask32;
 
         case OPCODE_SYSTEM:
             switch (funct3) {
-                case 0b000 /* ECALL/EBREAK */:
+                case 0b000 /* PRIV : ECALL/EBREAK */:
                     switch (getItypeImmediate(insncode) /* funct12 */) {
                         case 0:
                             if (getRS1(insncode) == 0 && getRD(insncode) == 0) {
@@ -643,22 +638,206 @@ DisasmOperandType (*getRegMask)(uint8_t) = &getRegMask32;
                     }
                     break;
                 case 0b001 /* CSRRW */:
-                    //strcpy(disasm->instruction.mnemonic, "cssrw");
+                    // Atomic Read/Write CSR
+                    if (dest_reg == 0 /* zero */) {
+                        // CSRW csr, rs1 = CSRRW zero, csr, rs1
+                        strcpy(disasm->instruction.mnemonic, "csrw");
+                        disasm->operand[0].type = DISASM_OPERAND_REGISTER_TYPE;
+                        disasm->operand[0].type |= getCsrMask();
+                        disasm->operand[0].accessMode = DISASM_ACCESS_READ;
+                        disasm->operand[0].userData[0] = getCsr(insncode);
+                        disasm->operand[1].type = DISASM_OPERAND_REGISTER_TYPE;
+                        disasm->operand[1].type |= getRegMask(src1_reg);
+                        disasm->operand[1].accessMode = DISASM_ACCESS_READ;
+                    } else {
+                        strcpy(disasm->instruction.mnemonic, "cssrw");
+                        disasm->operand[0].type = DISASM_OPERAND_REGISTER_TYPE;
+                        disasm->operand[0].type |= getRegMask(dest_reg);
+                        disasm->operand[0].accessMode = DISASM_ACCESS_READ;
+                        disasm->operand[1].type = DISASM_OPERAND_REGISTER_TYPE;
+                        disasm->operand[1].type |= getCsrMask();
+                        disasm->operand[1].accessMode = DISASM_ACCESS_READ;
+                        disasm->operand[1].userData[0] = getCsr(insncode);
+                        disasm->operand[2].type = DISASM_OPERAND_REGISTER_TYPE;
+                        disasm->operand[2].type |= getRegMask(src1_reg);
+                        disasm->operand[2].accessMode = DISASM_ACCESS_READ;
+                    }
                     break;
                 case 0b010 /* CSRRS */:
-                    //strcpy(disasm->instruction.mnemonic, "csrrs");
+                    // Atomic Read and Set Bits in CSR
+                    if (src1_reg == 0 /* zero */) {
+                        // CSRR rd, csr = CSRRS rd, csr, zero
+                        switch (getCsr(insncode)) {
+                            case 0xc00 /* RDCYCLE */:
+                                strcpy(disasm->instruction.mnemonic, "rdcycle");
+                                disasm->operand[0].type = DISASM_OPERAND_REGISTER_TYPE;
+                                disasm->operand[0].type |= getRegMask(dest_reg);
+                                disasm->operand[0].accessMode = DISASM_ACCESS_WRITE;
+                                break;
+                            case 0xc01 /* RDTIME */:
+                                strcpy(disasm->instruction.mnemonic, "rdtime");
+                                disasm->operand[0].type = DISASM_OPERAND_REGISTER_TYPE;
+                                disasm->operand[0].type |= getRegMask(dest_reg);
+                                disasm->operand[0].accessMode = DISASM_ACCESS_WRITE;
+                                break;
+                            case 0xc02 /* RDINSTRET */:
+                                strcpy(disasm->instruction.mnemonic, "rdinstret");
+                                disasm->operand[0].type = DISASM_OPERAND_REGISTER_TYPE;
+                                disasm->operand[0].type |= getRegMask(dest_reg);
+                                disasm->operand[0].accessMode = DISASM_ACCESS_WRITE;
+                                break;
+                            case 0xc80 /* RDCYCLEH */:
+                                strcpy(disasm->instruction.mnemonic, "rdcycleh");
+                                disasm->operand[0].type = DISASM_OPERAND_REGISTER_TYPE;
+                                disasm->operand[0].type |= getRegMask(dest_reg);
+                                disasm->operand[0].accessMode = DISASM_ACCESS_WRITE;
+                                break;
+                            case 0xc81 /* RDTIMEH */:
+                                strcpy(disasm->instruction.mnemonic, "rdtimeh");
+                                disasm->operand[0].type = DISASM_OPERAND_REGISTER_TYPE;
+                                disasm->operand[0].type |= getRegMask(dest_reg);
+                                disasm->operand[0].accessMode = DISASM_ACCESS_WRITE;
+                                break;
+                            case 0xc82 /* RDINSTRETH */:
+                                strcpy(disasm->instruction.mnemonic, "rdinstreth");
+                                disasm->operand[0].type = DISASM_OPERAND_REGISTER_TYPE;
+                                disasm->operand[0].type |= getRegMask(dest_reg);
+                                disasm->operand[0].accessMode = DISASM_ACCESS_WRITE;
+                                break;
+                            default:
+                                strcpy(disasm->instruction.mnemonic, "csrr");
+                                disasm->operand[0].type = DISASM_OPERAND_REGISTER_TYPE;
+                                disasm->operand[0].type |= getRegMask(dest_reg);
+                                disasm->operand[0].accessMode = DISASM_ACCESS_WRITE;
+                                disasm->operand[1].type = DISASM_OPERAND_REGISTER_TYPE;
+                                disasm->operand[1].type |= getCsrMask();
+                                disasm->operand[1].accessMode = DISASM_ACCESS_READ;
+                                disasm->operand[1].userData[0] = getCsr(insncode);
+                        }
+                    } else if (dest_reg == 0 /* zero */) {
+                        // CSRS csr, rs1 = CSRRS zero, csr, rs1
+                        strcpy(disasm->instruction.mnemonic, "csrs");
+                        disasm->operand[0].type = DISASM_OPERAND_REGISTER_TYPE;
+                        disasm->operand[0].type |= getCsrMask();
+                        disasm->operand[0].accessMode = DISASM_ACCESS_WRITE;
+                        disasm->operand[0].userData[0] = getCsr(insncode);
+                        disasm->operand[1].type = DISASM_OPERAND_REGISTER_TYPE;
+                        disasm->operand[1].type |= getRegMask(src1_reg);
+                        disasm->operand[1].accessMode = DISASM_ACCESS_READ;
+                    } else {
+                        strcpy(disasm->instruction.mnemonic, "csrrs");
+                        disasm->operand[0].type = DISASM_OPERAND_REGISTER_TYPE;
+                        disasm->operand[0].type |= getRegMask(dest_reg);
+                        disasm->operand[0].accessMode = DISASM_ACCESS_WRITE;
+                        disasm->operand[1].type = DISASM_OPERAND_REGISTER_TYPE;
+                        disasm->operand[1].type |= getCsrMask();
+                        disasm->operand[1].accessMode = DISASM_ACCESS_READ;
+                        disasm->operand[1].userData[0] = getCsr(insncode);
+                        disasm->operand[2].type = DISASM_OPERAND_REGISTER_TYPE;
+                        disasm->operand[2].type |= getRegMask(src1_reg);
+                        disasm->operand[2].accessMode = DISASM_ACCESS_READ;
+                    }
                     break;
                 case 0b011 /* CSRRC */:
-                    //strcpy(disasm->instruction.mnemonic, "csrrc");
+                    // Atomic Read and Clear Bits in CSR
+                    if (dest_reg == 0 /* zero */) {
+                        // CSRC csr, rs1 = CSRRC zero, csr, rs1
+                        strcpy(disasm->instruction.mnemonic, "csrc");
+                        disasm->operand[0].type = DISASM_OPERAND_REGISTER_TYPE;
+                        disasm->operand[0].type |= getCsrMask();
+                        disasm->operand[0].accessMode = DISASM_ACCESS_WRITE;
+                        disasm->operand[0].userData[0] = getCsr(insncode);
+                        disasm->operand[1].type = DISASM_OPERAND_REGISTER_TYPE;
+                        disasm->operand[1].type |= getRegMask(src1_reg);
+                        disasm->operand[1].accessMode = DISASM_ACCESS_READ;
+                    } else {
+                        strcpy(disasm->instruction.mnemonic, "csrrc");
+                        disasm->operand[0].type = DISASM_OPERAND_REGISTER_TYPE;
+                        disasm->operand[0].type |= getRegMask(dest_reg);
+                        disasm->operand[0].accessMode = DISASM_ACCESS_WRITE;
+                        disasm->operand[1].type = DISASM_OPERAND_REGISTER_TYPE;
+                        disasm->operand[1].type |= getCsrMask();
+                        disasm->operand[1].accessMode = DISASM_ACCESS_READ;
+                        disasm->operand[1].userData[0] = getCsr(insncode);
+                        disasm->operand[2].type = DISASM_OPERAND_REGISTER_TYPE;
+                        disasm->operand[2].type |= getRegMask(src1_reg);
+                        disasm->operand[2].accessMode = DISASM_ACCESS_READ;
+                    }
                     break;
                 case 0b101 /* CSRRWI */:
-                    //strcpy(disasm->instruction.mnemonic, "csrrwi");
+                    if (dest_reg == 0 /* zero */) {
+                        // CSRWI csr, zimm = CSRRWI zero, csr, zimm
+                        strcpy(disasm->instruction.mnemonic, "csrwi");
+                        disasm->operand[0].type = DISASM_OPERAND_REGISTER_TYPE;
+                        disasm->operand[0].type |= getCsrMask();
+                        disasm->operand[0].accessMode = DISASM_ACCESS_READ;
+                        disasm->operand[0].userData[0] = getCsr(insncode);
+                        disasm->operand[1].type = DISASM_OPERAND_CONSTANT_TYPE;
+                        disasm->operand[1].immediateValue = src1_reg;
+                        disasm->operand[1].accessMode = DISASM_ACCESS_READ;
+                    } else {
+                        strcpy(disasm->instruction.mnemonic, "csrrwi");
+                        disasm->operand[0].type = DISASM_OPERAND_REGISTER_TYPE;
+                        disasm->operand[0].type |= getRegMask(dest_reg);
+                        disasm->operand[0].accessMode = DISASM_ACCESS_WRITE;
+                        disasm->operand[1].type = DISASM_OPERAND_REGISTER_TYPE;
+                        disasm->operand[1].type |= getCsrMask();
+                        disasm->operand[1].accessMode = DISASM_ACCESS_READ;
+                        disasm->operand[1].userData[0] = getCsr(insncode);
+                        disasm->operand[2].type = DISASM_OPERAND_CONSTANT_TYPE;
+                        disasm->operand[2].immediateValue = src1_reg;
+                        disasm->operand[2].accessMode = DISASM_ACCESS_READ;
+                    }
                     break;
                 case 0b110 /* CSRRSI */:
-                    //strcpy(disasm->instruction.mnemonic, "csrri");
+                    if (dest_reg == 0 /* zero */) {
+                        // CSRSI csr, zimm = CSRRSI zero, csr, zimm
+                        strcpy(disasm->instruction.mnemonic, "csrsi");
+                        disasm->operand[0].type = DISASM_OPERAND_REGISTER_TYPE;
+                        disasm->operand[0].type |= getCsrMask();
+                        disasm->operand[0].accessMode = DISASM_ACCESS_READ;
+                        disasm->operand[0].userData[0] = getCsr(insncode);
+                        disasm->operand[1].type = DISASM_OPERAND_CONSTANT_TYPE;
+                        disasm->operand[1].immediateValue = src1_reg;
+                        disasm->operand[1].accessMode = DISASM_ACCESS_READ;
+                    } else {
+                        strcpy(disasm->instruction.mnemonic, "csrrsi");
+                        disasm->operand[0].type = DISASM_OPERAND_REGISTER_TYPE;
+                        disasm->operand[0].type |= getRegMask(dest_reg);
+                        disasm->operand[0].accessMode = DISASM_ACCESS_WRITE;
+                        disasm->operand[1].type = DISASM_OPERAND_REGISTER_TYPE;
+                        disasm->operand[1].type |= getCsrMask();
+                        disasm->operand[1].accessMode = DISASM_ACCESS_READ;
+                        disasm->operand[1].userData[0] = getCsr(insncode);
+                        disasm->operand[2].type = DISASM_OPERAND_CONSTANT_TYPE;
+                        disasm->operand[2].immediateValue = src1_reg;
+                        disasm->operand[2].accessMode = DISASM_ACCESS_READ;
+                    }
                     break;
                 case 0b111 /* CSRRCI */:
-                    //strcpy(disasm->instruction.mnemonic, "csrrci");
+                    if (dest_reg == 0 /* zero */) {
+                        // CSRCI csr, zimm = CSRRCI zero, csr, zimm
+                        strcpy(disasm->instruction.mnemonic, "csrci");
+                        disasm->operand[0].type = DISASM_OPERAND_REGISTER_TYPE;
+                        disasm->operand[0].type |= getCsrMask();
+                        disasm->operand[0].accessMode = DISASM_ACCESS_READ;
+                        disasm->operand[0].userData[0] = getCsr(insncode);
+                        disasm->operand[1].type = DISASM_OPERAND_CONSTANT_TYPE;
+                        disasm->operand[1].immediateValue = src1_reg;
+                        disasm->operand[1].accessMode = DISASM_ACCESS_READ;
+                    } else {
+                        strcpy(disasm->instruction.mnemonic, "csrrci");
+                        disasm->operand[0].type = DISASM_OPERAND_REGISTER_TYPE;
+                        disasm->operand[0].type |= getRegMask(dest_reg);
+                        disasm->operand[0].accessMode = DISASM_ACCESS_WRITE;
+                        disasm->operand[1].type = DISASM_OPERAND_REGISTER_TYPE;
+                        disasm->operand[1].type |= getCsrMask();
+                        disasm->operand[1].accessMode = DISASM_ACCESS_READ;
+                        disasm->operand[1].userData[0] = getCsr(insncode);
+                        disasm->operand[2].type = DISASM_OPERAND_CONSTANT_TYPE;
+                        disasm->operand[2].immediateValue = src1_reg;
+                        disasm->operand[2].accessMode = DISASM_ACCESS_READ;
+                    }
                     break;
             }
             break;
@@ -666,6 +845,9 @@ DisasmOperandType (*getRegMask)(uint8_t) = &getRegMask32;
             break;
     }
 
+    if (disasm->instruction.mnemonic[0] == 0) {
+        return DISASM_UNKNOWN_OPCODE;
+    }
     return len;
 }
 
@@ -768,6 +950,9 @@ static inline int regIndexFromType(uint64_t type) {
                                                  ofClass:regCls
                                              withBitSize:bitsize
                                              andPosition:DISASM_LOWPOSITION];
+        if ([reg_name isEqualToString:@"csr"]) {
+            reg_name = getCsrName(operand->userData[0]);
+        }
         [line appendRegister:reg_name
                      ofClass:regCls
                     andIndex:regIdx];
@@ -783,9 +968,8 @@ static inline int regIndexFromType(uint64_t type) {
                                                  withBitSize:bitsize
                                                  andPosition:DISASM_LOWPOSITION];
 
-            if (format & Format_Default) {
+            if ((format & Format_Default) == Format_Default) {
                 // clear default Format types
-                //format = format & Format_Negate;
                 if ([reg_name isEqualToString:@"sp"] || [reg_name isEqualToString:@"sp_64"]) {
                     format |= Format_StackVariable;
                 } else {

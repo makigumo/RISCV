@@ -108,26 +108,24 @@
 - (NSUInteger)registerCountForClass:(RegClass)reg_class {
     switch (reg_class) {
         case (RegClass) RegClass_RISCV_ABI:
-        case (RegClass) RegClass_RISCV_ABI64:
             return 10;
         case (RegClass) RegClass_RISCV_RetVal:
-        case (RegClass) RegClass_RISCV_RetVal64:
             return 2;
         case (RegClass) RegClass_RISCV_FuncArg:
-        case (RegClass) RegClass_RISCV_FuncArg64:
             return 6;
         case (RegClass) RegClass_RISCV_Saved:
-        case (RegClass) RegClass_RISCV_Saved64:
             return 10;
         case (RegClass) RegClass_RISCV_Temp:
-        case (RegClass) RegClass_RISCV_Temp64:
             return 4;
-        case (RegClass) RegClass_RISCV_Pair64:
-        case (RegClass) RegClass_RISCV_Pair128:
+        case (RegClass) RegClass_RISCV_Pair:
             return 4;
         case (RegClass) RegClass_RISCV_FPU_Temp:
-        case (RegClass) RegClass_RISCV_FPU_Temp64:
             return 10;
+
+        case (RegClass) RegClass_RISCV_CSR:
+            // actually up to 4096
+            // we use a single register type here and put the real value into the operands userdata[0]
+            return 1;
 
         default:
             break;
@@ -136,8 +134,7 @@
 }
 
 - (BOOL)registerIndexIsStackPointer:(NSUInteger)reg ofClass:(RegClass)reg_class {
-    return (reg_class == RegClass_RISCV_ABI || reg_class == RegClass_RISCV_ABI64) &&
-            reg == 2;
+    return reg_class == RegClass_RISCV_ABI && reg == 2;
 }
 
 - (BOOL)registerIndexIsFrameBasePointer:(NSUInteger)reg ofClass:(RegClass)reg_class {
@@ -171,42 +168,17 @@
             return [NSString stringWithFormat:@"s%d", (int) reg + 2];
         case (RegClass) RegClass_RISCV_Temp:
             return [NSString stringWithFormat:@"t%d", (int) reg + 2];
-        case (RegClass) RegClass_RISCV_Pair64:
+        case (RegClass) RegClass_RISCV_Pair:
             if (reg < 4) {
-                static NSString *names[] = {
+                static NSString *names32[] = {
                         @"a0_p64" /*a0,a1*/, @"a1_p64" /*a2,a3*/, @"a2_p64" /*a4,a5*/, @"a3_p64" /*a6,a7*/,
                 };
-                return names[reg];
-            }
-            return [NSString stringWithFormat:@"UNKNOWN_PAIR64_REG<%lld>", (long long) reg];
-
-            // 64 bit registers
-        case (RegClass) RegClass_RISCV_ABI64:
-            if (reg < 10) {
-                static NSString *names[] = {
-                        @"zero_64", @"ra_64", @"sp_64", @"gp_64",
-                        @"tp_64", @"t0_64", @"t1_64", @"t2_64",
-                        @"fp_64" /* s0_64 */, @"s1_64"
-                };
-                return names[reg];
-            }
-            return [NSString stringWithFormat:@"UNKNOWN_ABI_REG<%lld>", (long long) reg];
-        case (RegClass) RegClass_RISCV_RetVal64:
-            return [NSString stringWithFormat:@"a%d_64", (int) reg];
-        case (RegClass) RegClass_RISCV_FuncArg64:
-            return [NSString stringWithFormat:@"a%d_64", (int) reg + 2];
-        case (RegClass) RegClass_RISCV_Saved64:
-            return [NSString stringWithFormat:@"s%d_64", (int) reg + 2];
-        case (RegClass) RegClass_RISCV_Temp64:
-            return [NSString stringWithFormat:@"t%d_64", (int) reg + 2];
-        case (RegClass) RegClass_RISCV_Pair128:
-            if (reg < 4) {
-                static NSString *names[] = {
+                static NSString *names64[] = {
                         @"a0_p128" /*a0_64,a1_64*/, @"a1_p128" /*a2_64,a3_64*/, @"a2_p128" /*a4_64,a5_64*/, @"a3_p128" /*a6_64,a7_64*/,
                 };
-                return names[reg];
+                return names32[reg];
             }
-            return [NSString stringWithFormat:@"UNKNOWN_PAIR128_REG<%lld>", (long long) reg];
+            return [NSString stringWithFormat:@"UNKNOWN_PAIR64_REG<%lld>", (long long) reg];
 
             // FPU 32 bit
         case (RegClass) RegClass_RISCV_FPU_Temp:
@@ -223,6 +195,9 @@
             return [NSString stringWithFormat:@"fa%d", (int) reg];
         case (RegClass) RegClass_RISCV_FPU_Save:
             return [NSString stringWithFormat:@"fs%d", (int) reg + 2];
+        case (RegClass) RegClass_RISCV_CSR:
+            return @"csr";
+
         case (RegClass) -1:
             break;
         default:

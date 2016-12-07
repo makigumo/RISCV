@@ -18,7 +18,7 @@
 
 @end
 
-extern DisasmOperandType (*getRegMask)(uint8_t);
+extern NSString *getCsrName(uint64_t csr);
 
 #define OPCODE_MASK     0x0000007f
 #define DEST_MASK       0x00000f80
@@ -93,6 +93,10 @@ static inline int32_t getStypeImmediate(uint32_t insn) {
 
 static inline int32_t getUtypeImmediate(uint32_t insn) {
     return ((insn & 0xfffff000) >> 12) /* bits 31..12 */;
+}
+
+static inline uint32_t getCsr(uint32_t insn) {
+    return ((insn & 0xfff00000) >> 20) /* bits 31..20 */;
 }
 
 // get funct3
