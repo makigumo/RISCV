@@ -34,6 +34,8 @@ extern DisasmOperandType (*getRegMask)(uint8_t);
 #define OPCODE_OPIMM    (uint8_t) 0b0010011
 #define OPCODE_OPIMM32  OPCODE_OPIMM
 #define OPCODE_OPIMM64  (uint8_t) 0b0011011
+#define OPCODE_LOAD     (uint8_t) 0b0000011
+#define OPCODE_STORE    (uint8_t) 0b0100011
 #define OPCODE_OP       (uint8_t) 0b0110011
 #define OPCODE_OP32     (uint8_t) 0b0111011
 #define OPCODE_AUIPC    (uint8_t) 0b0010111
@@ -41,6 +43,8 @@ extern DisasmOperandType (*getRegMask)(uint8_t);
 #define OPCODE_BRANCH   (uint8_t) 0b1100011
 #define OPCODE_JALR     (uint8_t) 0b1100111
 #define OPCODE_JAL      (uint8_t) 0b1101111
+#define OPCODE_MISC_MEM (uint8_t) 0b0001111
+#define OPCODE_SYSTEM   (uint8_t) 0b1110011
 
 typedef struct {
     uint8_t opcode; /* bits 6..0 */
@@ -66,10 +70,11 @@ static inline int32_t getUJtypeImmediate(uint32_t insn) {
 
 // the 12-bit B-immediate encodes signed offsets in multiples of 2
 static inline int32_t getBtypeImmediate(uint32_t insn) {
-    return ((int32_t) (insn & 0x80E00000) >> 19 /* bits 31 -> 12 */ |
-            (int32_t) (insn & 0x00000080) >> 9  /* bit 7 -> 11 */ |
-            (int32_t) (insn & 0x7D000000) >> 20 /* bits 30..25 -> 10..5 */ |
-            (int32_t) (insn & 0x80000f00) >> 8  /* bit 11..8 -> 4..1 */);
+    return (((int32_t) (insn & 0x00000080) << 4  /* bit 7 -> 11 */ |
+            (int32_t) (insn & 0x7E000000) >> 20 /* bits 30..25 -> 10..5 */ |
+            (int32_t) (insn & 0x00000f00) >> 7  /* bit 11..8 -> 4..1 */ |
+            (int32_t) (-((insn >> 31) & 1)) << 12 /* bits 31 -> 12 */)
+    ) & ~1;
 }
 
 // returns 12 bit signed I-immediate with LSB cleared
@@ -79,6 +84,11 @@ static inline int32_t getItypeImmediateLSBcleared(uint32_t insn) {
 
 static inline int32_t getItypeImmediate(uint32_t insn) {
     return ((int32_t) (insn & 0xfff00000) >> 20) /* bits 31..20 */;
+}
+
+static inline int32_t getStypeImmediate(uint32_t insn) {
+    return ((int32_t) (insn & 0x00000f80) >> 7) /* bits 11..7 -> 4..0 */ |
+            ((int32_t) (insn & 0xfe000000) >> 20) /* bits 31..25 -> 11..5 */;
 }
 
 static inline int32_t getUtypeImmediate(uint32_t insn) {
@@ -117,16 +127,16 @@ static inline uint8_t getRD(uint32_t insncode) {
 
 // get shift amount
 static inline uint8_t getShamt(uint32_t insncode) {
-    return (uint8_t) (((uint32_t)(insncode & SHAMT_MASK)) >> 20 );
+    return (uint8_t) (((uint32_t) (insncode & SHAMT_MASK)) >> 20);
 }
 
 // get shift amount 64 bit extension
 static inline uint8_t getShamt64(uint32_t insncode) {
-    return (uint8_t) (((uint32_t)(insncode & SHAMT64_MASK)) >> 20 );
+    return (uint8_t) (((uint32_t) (insncode & SHAMT64_MASK)) >> 20);
 }
 
-static inline void populateOP(DisasmStruct* disasm, uint32_t insn, const char* mnemonic) {
-     strcpy(disasm->instruction.mnemonic, mnemonic);
+static inline void populateOP(DisasmStruct *disasm, uint32_t insn, const char *mnemonic) {
+    strcpy(disasm->instruction.mnemonic, mnemonic);
     disasm->operand[0].type = DISASM_OPERAND_REGISTER_TYPE;
     disasm->operand[0].type |= getRegMask(getRD(insn));
     disasm->operand[0].accessMode = DISASM_ACCESS_WRITE;
@@ -138,7 +148,7 @@ static inline void populateOP(DisasmStruct* disasm, uint32_t insn, const char* m
     disasm->operand[2].accessMode = DISASM_ACCESS_READ;
 }
 
-static inline void populateOPIMM(DisasmStruct * disasm, uint32_t insn, const char* mnemonic) {
+static inline void populateOPIMM(DisasmStruct *disasm, uint32_t insn, const char *mnemonic) {
     strcpy(disasm->instruction.mnemonic, mnemonic);
     disasm->operand[0].type = DISASM_OPERAND_REGISTER_TYPE;
     disasm->operand[0].type |= getRegMask(getRD(insn));
@@ -151,7 +161,7 @@ static inline void populateOPIMM(DisasmStruct * disasm, uint32_t insn, const cha
     disasm->operand[2].accessMode = DISASM_ACCESS_READ;
 }
 
-static inline void populateOPIMMShift(DisasmStruct * disasm, uint32_t insn, const char* mnemonic) {
+static inline void populateOPIMMShift(DisasmStruct *disasm, uint32_t insn, const char *mnemonic) {
     strcpy(disasm->instruction.mnemonic, mnemonic);
     disasm->operand[0].type = DISASM_OPERAND_REGISTER_TYPE;
     disasm->operand[0].type |= getRegMask(getRD(insn));
@@ -164,7 +174,7 @@ static inline void populateOPIMMShift(DisasmStruct * disasm, uint32_t insn, cons
     disasm->operand[2].accessMode = DISASM_ACCESS_READ;
 }
 
-static inline void populateOPIMMShift64(DisasmStruct * disasm, uint32_t insn, const char* mnemonic) {
+static inline void populateOPIMMShift64(DisasmStruct *disasm, uint32_t insn, const char *mnemonic) {
     strcpy(disasm->instruction.mnemonic, mnemonic);
     disasm->operand[0].type = DISASM_OPERAND_REGISTER_TYPE;
     disasm->operand[0].type |= getRegMask(getRD(insn));
@@ -174,5 +184,31 @@ static inline void populateOPIMMShift64(DisasmStruct * disasm, uint32_t insn, co
     disasm->operand[1].accessMode = DISASM_ACCESS_READ;
     disasm->operand[2].type = DISASM_OPERAND_CONSTANT_TYPE;
     disasm->operand[2].immediateValue = getShamt64(insn);
+    disasm->operand[2].accessMode = DISASM_ACCESS_READ;
+}
+
+static inline void populateLOAD(DisasmStruct *disasm, uint32_t insn, const char *mnemonic) {
+    strcpy(disasm->instruction.mnemonic, mnemonic);
+    disasm->operand[0].type = DISASM_OPERAND_REGISTER_TYPE;
+    disasm->operand[0].type |= getRegMask(getRD(insn));
+    disasm->operand[0].accessMode = DISASM_ACCESS_WRITE;
+    disasm->operand[1].type = DISASM_OPERAND_MEMORY_TYPE;
+    disasm->operand[1].type |= getRegMask(getRS1(insn));
+    disasm->operand[1].memory.baseRegistersMask = getRegMask(getRS1(insn));
+    disasm->operand[1].memory.displacement = getItypeImmediate(insn);
+    disasm->operand[1].memory.scale = 1;
+    disasm->operand[2].accessMode = DISASM_ACCESS_READ;
+}
+
+static inline void populateSTORE(DisasmStruct *disasm, uint32_t insn, const char *mnemonic) {
+    strcpy(disasm->instruction.mnemonic, mnemonic);
+    disasm->operand[0].type = DISASM_OPERAND_REGISTER_TYPE;
+    disasm->operand[0].type |= getRegMask(getRS2(insn));
+    disasm->operand[0].accessMode = DISASM_ACCESS_WRITE;
+    disasm->operand[1].type = DISASM_OPERAND_MEMORY_TYPE;
+    disasm->operand[1].type |= getRegMask(getRS1(insn));
+    disasm->operand[1].memory.baseRegistersMask = getRegMask(getRS1(insn));
+    disasm->operand[1].memory.displacement = getStypeImmediate(insn);
+    disasm->operand[1].memory.scale = 1;
     disasm->operand[2].accessMode = DISASM_ACCESS_READ;
 }

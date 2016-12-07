@@ -50,6 +50,7 @@
 
 - (void)testGetBTypeImmediate {
     XCTAssertEqual(getBtypeImmediate(0x04051063), 0x40);
+    XCTAssertEqual(getBtypeImmediate(0xfed79ae3), -0xc);
 }
 
 - (void)testGetShamt64 {
