@@ -357,6 +357,41 @@
             }
             break;
 
+        case OPCODE_OPIMM64:
+            switch (funct3) {
+                case 0b000 /* addiw */:
+                    if (getItypeImmediate(insncode) == 0) {
+                        strcpy(disasm->instruction.mnemonic, "sext.w");
+                        disasm->operand[0].type = DISASM_OPERAND_REGISTER_TYPE;
+                        disasm->operand[0].type |= getRegMask(dest_reg);
+                        disasm->operand[0].accessMode = DISASM_ACCESS_WRITE;
+                        disasm->operand[1].type = DISASM_OPERAND_REGISTER_TYPE;
+                        disasm->operand[1].type |= getRegMask(src1_reg);
+                        disasm->operand[1].accessMode = DISASM_ACCESS_READ;
+                    } else {
+                        populateOPIMM(disasm, insncode, "addiw");
+                    }
+                    break;
+                case 0b001 /* slliw */:
+                    switch (funct7) {
+                        case 0b0000000:
+                            populateOPIMMShift64(disasm, insncode, "slliw");
+                            break;
+                    }
+                    break;
+                case 0b101 /* slliw/srliw */:
+                    switch (funct7) {
+                        case 0b0000000:
+                            populateOPIMMShift64(disasm, insncode, "srliw");
+                            break;
+                        case 0b0100000:
+                            populateOPIMMShift64(disasm, insncode, "sraiw");
+                            break;
+                    }
+                    break;
+            }
+            break;
+
         case OPCODE_BRANCH /* BRANCH */:
             switch (funct3) {
                 case 0b000 /* beq */:
@@ -535,7 +570,7 @@
                     }
                     break;
                 case 0b0000001 /* MULDIV */:
-                    switch(funct3) {
+                    switch (funct3) {
                         case 0b000 /* MUL */:
                             populateOP(disasm, insncode, "mul");
                             break;
@@ -565,7 +600,17 @@
                 case 0b0100000:
                     switch (funct3) {
                         case 0b000 /* sub */:
-                            populateOP(disasm, insncode, "sub");
+                            if (src2_reg == 0 /* zero */) {
+                                strcpy(disasm->instruction.mnemonic, "neg");
+                                disasm->operand[0].type = DISASM_OPERAND_REGISTER_TYPE;
+                                disasm->operand[0].type |= getRegMask(dest_reg);
+                                disasm->operand[0].accessMode = DISASM_ACCESS_WRITE;
+                                disasm->operand[1].type = DISASM_OPERAND_REGISTER_TYPE;
+                                disasm->operand[1].type |= getRegMask(src1_reg);
+                                disasm->operand[1].accessMode = DISASM_ACCESS_READ;
+                            } else {
+                                populateOP(disasm, insncode, "sub");
+                            }
                             break;
                         case 0b101 /* sra */:
                             populateOP(disasm, insncode, "sra");
@@ -615,7 +660,17 @@
                 case 0b0100000:
                     switch (funct3) {
                         case 0b000 /* sub */:
-                            populateOP(disasm, insncode, "subw");
+                            if (src2_reg == 0 /* zero */) {
+                                strcpy(disasm->instruction.mnemonic, "negw");
+                                disasm->operand[0].type = DISASM_OPERAND_REGISTER_TYPE;
+                                disasm->operand[0].type |= getRegMask(dest_reg);
+                                disasm->operand[0].accessMode = DISASM_ACCESS_WRITE;
+                                disasm->operand[1].type = DISASM_OPERAND_REGISTER_TYPE;
+                                disasm->operand[1].type |= getRegMask(src1_reg);
+                                disasm->operand[1].accessMode = DISASM_ACCESS_READ;
+                            } else {
+                                populateOP(disasm, insncode, "subw");
+                            }
                             break;
                         case 0b101 /* sra */:
                             populateOP(disasm, insncode, "sraw");
@@ -644,6 +699,9 @@
                     break;
                 case 0b101 /* LHU */:
                     populateLOAD(disasm, insncode, "lhu");
+                    break;
+                case 0b110 /* LWU */:
+                    populateLOAD(disasm, insncode, "lwu");
                     break;
             }
             break;
