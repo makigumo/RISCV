@@ -63,9 +63,51 @@ static DisasmOperandType reg_masks_32[] = {
         REG_MASK(RegClass_RISCV_Temp, 3) /* t6 */,
 };
 
+static DisasmOperandType reg_fpu_masks[] = {
+        REG_MASK(RegClass_RISCV_FPU_Temp, 0) /* ft0 */,
+        REG_MASK(RegClass_RISCV_FPU_Temp, 1) /* ft1 */,
+        REG_MASK(RegClass_RISCV_FPU_Temp, 2) /* ft2 */,
+        REG_MASK(RegClass_RISCV_FPU_Temp, 3) /* ft3 */,
+        REG_MASK(RegClass_RISCV_FPU_Temp, 4) /* ft4 */,
+        REG_MASK(RegClass_RISCV_FPU_Temp, 5) /* ft5 */,
+        REG_MASK(RegClass_RISCV_FPU_Temp, 6) /* ft6 */,
+        REG_MASK(RegClass_RISCV_FPU_Temp, 7) /* ft7 */,
+        REG_MASK(RegClass_RISCV_FPU_Save, 0) /* fs0 */,
+        REG_MASK(RegClass_RISCV_FPU_Save, 1) /* fs1 */,
+        REG_MASK(RegClass_RISCV_FPU_Arg, 0) /* fa0 */,
+        REG_MASK(RegClass_RISCV_FPU_Arg, 1) /* fa1 */,
+        REG_MASK(RegClass_RISCV_FPU_Arg, 2) /* fa2 */,
+        REG_MASK(RegClass_RISCV_FPU_Arg, 3) /* fa3 */,
+        REG_MASK(RegClass_RISCV_FPU_Arg, 4) /* fa4 */,
+        REG_MASK(RegClass_RISCV_FPU_Arg, 5) /* fa5 */,
+        REG_MASK(RegClass_RISCV_FPU_Arg, 6) /* fa6 */,
+        REG_MASK(RegClass_RISCV_FPU_Arg, 7) /* fa7 */,
+        REG_MASK(RegClass_RISCV_FPU_Save, 2) /* fs2 */,
+        REG_MASK(RegClass_RISCV_FPU_Save, 3) /* fs3 */,
+        REG_MASK(RegClass_RISCV_FPU_Save, 4) /* fs4 */,
+        REG_MASK(RegClass_RISCV_FPU_Save, 5) /* fs5 */,
+        REG_MASK(RegClass_RISCV_FPU_Save, 6) /* fs6 */,
+        REG_MASK(RegClass_RISCV_FPU_Save, 7) /* fs7 */,
+        REG_MASK(RegClass_RISCV_FPU_Save, 8) /* fs8 */,
+        REG_MASK(RegClass_RISCV_FPU_Save, 9) /* fs9 */,
+        REG_MASK(RegClass_RISCV_FPU_Save, 10) /* fs10 */,
+        REG_MASK(RegClass_RISCV_FPU_Save, 11) /* fs11 */,
+        REG_MASK(RegClass_RISCV_FPU_Temp, 8) /* ft8 */,
+        REG_MASK(RegClass_RISCV_FPU_Temp, 9) /* ft9 */,
+        REG_MASK(RegClass_RISCV_FPU_Temp, 10) /* ft10 */,
+        REG_MASK(RegClass_RISCV_FPU_Temp, 11) /* ft11 */,
+};
+
 static inline DisasmOperandType getRegMask(uint8_t reg) {
     if (reg < sizeof(reg_masks_32)/sizeof(reg_masks_32[0])) {
         return reg_masks_32[reg];
+    }
+    return 0;
+}
+
+static inline DisasmOperandType getFpuRegMask(uint8_t reg) {
+    if (reg < sizeof(reg_fpu_masks)/sizeof(reg_fpu_masks[0])) {
+        return reg_fpu_masks[reg];
     }
     return 0;
 }

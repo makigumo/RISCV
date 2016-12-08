@@ -120,7 +120,11 @@
         case (RegClass) RegClass_RISCV_Pair:
             return 4;
         case (RegClass) RegClass_RISCV_FPU_Temp:
-            return 10;
+            return 12;
+        case (RegClass) RegClass_RISCV_FPU_Save:
+            return 12;
+        case (RegClass) RegClass_RISCV_FPU_Arg:
+            return 8;
 
         case (RegClass) RegClass_RISCV_CSR:
             // actually up to 4096

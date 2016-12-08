@@ -30,6 +30,8 @@ extern NSString *getCsrName(uint64_t csr);
 #define IMM_MASK        0xfffff000
 #define SHAMT_MASK      0x01F00000
 #define SHAMT64_MASK    0x03F00000
+#define PRED_MASK       0x0f000000
+#define SUCC_MASK       0x00f00000
 
 #define OPCODE_OPIMM    (uint8_t) 0b0010011
 #define OPCODE_OPIMM32  OPCODE_OPIMM
@@ -137,6 +139,25 @@ static inline uint8_t getShamt(uint32_t insncode) {
 // get shift amount 64 bit extension
 static inline uint8_t getShamt64(uint32_t insncode) {
     return (uint8_t) (((uint32_t) (insncode & SHAMT64_MASK)) >> 20);
+}
+
+// get predecessor for fence instruction bits 27..24
+static inline uint8_t getPredecessor(uint32_t insncode) {
+    return (uint8_t) (((uint32_t) (insncode & PRED_MASK)) >> 24);
+}
+
+// get predecessor for fence instruction bits 23..20
+static inline uint8_t getSuccessor(uint32_t insncode) {
+    return (uint8_t) (((uint32_t) (insncode & SUCC_MASK)) >> 20);
+}
+
+static inline NSString *getIorw(uint8_t insncode) {
+    NSString *res = @"";
+    if (insncode & 0b1000) res = [res stringByAppendingString:@"i"];
+    if (insncode & 0b0100) res = [res stringByAppendingString:@"o"];
+    if (insncode & 0b0010) res = [res stringByAppendingString:@"r"];
+    if (insncode & 0b0001) res = [res stringByAppendingString:@"w"];
+    return res;
 }
 
 static inline void populateOP(DisasmStruct *disasm, uint32_t insn, const char *mnemonic) {

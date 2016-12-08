@@ -619,7 +619,22 @@
             break;
 
         case OPCODE_MISC_MEM:
+            switch (funct3) {
+                case 0b000 /* FENCE */:
+                    strcpy(disasm->instruction.mnemonic, "fence");
+                    if (getPredecessor(insncode) != 0xf || getSuccessor(insncode) != 0xf) {
+                        disasm->operand[0].type = DISASM_OPERAND_CONSTANT_TYPE;
+                        disasm->operand[0].immediateValue = getPredecessor(insncode);
+                        disasm->operand[1].type = DISASM_OPERAND_CONSTANT_TYPE;
+                        disasm->operand[1].immediateValue = getSuccessor(insncode);
+                    }
+                    break;
+                case 0b001 /* FENCE.I */:
+                    strcpy(disasm->instruction.mnemonic, "fence.i");
+                    break;
+            }
             break;
+
 
         case OPCODE_SYSTEM:
             switch (funct3) {
@@ -841,6 +856,7 @@
                     break;
             }
             break;
+
         default:
             break;
     }
@@ -927,6 +943,8 @@ static inline int regIndexFromType(uint64_t type) {
                 [line appendLocalName:localLabel
                             atAddress:(Address) disasm->instruction.addressValue];
             }
+        } else if (strcmp(disasm->instruction.mnemonic, "fence") == 0 && operand->immediateValue != 0) {
+            [line appendRawString:getIorw((uint8_t) operand->immediateValue)];
         } else {
             if (format == Format_Default) {
                 // small values in decimal
@@ -970,7 +988,7 @@ static inline int regIndexFromType(uint64_t type) {
 
             if ((format & Format_Default) == Format_Default) {
                 // clear default Format types
-                if ([reg_name isEqualToString:@"sp"] || [reg_name isEqualToString:@"sp_64"]) {
+                if ([reg_name isEqualToString:@"sp"]) {
                     format |= Format_StackVariable;
                 } else {
                     format |= Format_Offset;
