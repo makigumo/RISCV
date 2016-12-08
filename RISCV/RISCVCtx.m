@@ -534,6 +534,34 @@
                             break;
                     }
                     break;
+                case 0b0000001 /* MULDIV */:
+                    switch(funct3) {
+                        case 0b000 /* MUL */:
+                            populateOP(disasm, insncode, "mul");
+                            break;
+                        case 0b001 /* MULH */:
+                            populateOP(disasm, insncode, "mulh");
+                            break;
+                        case 0b010 /* MULHSU */:
+                            populateOP(disasm, insncode, "mulhsu");
+                            break;
+                        case 0b011 /* MULHU */:
+                            populateOP(disasm, insncode, "mulhu");
+                            break;
+                        case 0b100 /* DIV */:
+                            populateOP(disasm, insncode, "div");
+                            break;
+                        case 0b101 /* DIVU */:
+                            populateOP(disasm, insncode, "divu");
+                            break;
+                        case 0b110 /* REM */:
+                            populateOP(disasm, insncode, "rem");
+                            break;
+                        case 0b111 /* REMU */:
+                            populateOP(disasm, insncode, "remu");
+                            break;
+                    }
+                    break;
                 case 0b0100000:
                     switch (funct3) {
                         case 0b000 /* sub */:
@@ -562,6 +590,25 @@
                             break;
                         case 0b101 /* srl */:
                             populateOP(disasm, insncode, "srlw");
+                            break;
+                    }
+                    break;
+                case 0b0000001 /* MULDIV */:
+                    switch (funct3) {
+                        case 0b000 /* MULW */:
+                            populateOP(disasm, insncode, "mulw");
+                            break;
+                        case 0b100 /* DIVW */:
+                            populateOP(disasm, insncode, "divw");
+                            break;
+                        case 0b101 /* DIVUW */:
+                            populateOP(disasm, insncode, "divuw");
+                            break;
+                        case 0b110 /* REMW */:
+                            populateOP(disasm, insncode, "remw");
+                            break;
+                        case 0b111 /* REMUW */:
+                            populateOP(disasm, insncode, "remuw");
                             break;
                     }
                     break;

@@ -3,8 +3,9 @@
 Supported instruction sets:
 * [x] RV32I Base Instruction Set
 * [ ] RV64I Base Instruction Set
-* [ ] RV32M Standard Extension
-* [ ] RV64M Standard Extension
+<!--- * [ ] RV32E Base Integer Instruction Set --->
+* [x] RV32M Standard Extension
+* [x] RV64M Standard Extension
 * [ ] RV32A Standard Extension
 * [ ] RV64A Standard Extension
 * [ ] RV32F Standard Extension
