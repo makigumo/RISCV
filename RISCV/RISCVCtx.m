@@ -650,6 +650,47 @@
                                 strcpy(disasm->instruction.mnemonic, "ebreak");
                             }
                             break;
+
+                            /* trap-return instructions */
+                        case 0b000000000010:
+                            if (getRS1(insncode) == 0 && getRD(insncode) == 0) {
+                                strcpy(disasm->instruction.mnemonic, "uret");
+                            }
+                            break;
+                        case 0b000100000010:
+                            if (getRS1(insncode) == 0 && getRD(insncode) == 0) {
+                                strcpy(disasm->instruction.mnemonic, "sret");
+                            }
+                            break;
+                        case 0b001000000010:
+                            if (getRS1(insncode) == 0 && getRD(insncode) == 0) {
+                                strcpy(disasm->instruction.mnemonic, "hret");
+                            }
+                            break;
+                        case 0b001100000010:
+                            if (getRS1(insncode) == 0 && getRD(insncode) == 0) {
+                                strcpy(disasm->instruction.mnemonic, "mret");
+                            }
+                            break;
+
+                            /* interrupt-management instructions */
+                        case 0b000100000101:
+                            if (getRS1(insncode) == 0 && getRD(insncode) == 0) {
+                                strcpy(disasm->instruction.mnemonic, "wfi");
+                            }
+                            break;
+
+                            /* memory-management instructions */
+                        case 0b000100000100:
+                            if (getRD(insncode) == 0) {
+                                strcpy(disasm->instruction.mnemonic, "sfence.vm");
+                                if (getRS1(insncode) != 0) {
+                                    disasm->operand[0].type = DISASM_OPERAND_REGISTER_TYPE;
+                                    disasm->operand[0].type |= getRegMask(src1_reg);
+                                    disasm->operand[0].accessMode = DISASM_ACCESS_WRITE;
+                                }
+                            }
+                            break;
                     }
                     break;
                 case 0b001 /* CSRRW */:
