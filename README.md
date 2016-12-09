@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/makigumo/RISCV.svg?branch=master)](https://travis-ci.org/makigumo/RISCV)
+
 # RISC-V CPU module for Hopper Disassembler
 
 Supported instruction sets:

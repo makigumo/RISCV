@@ -1,0 +1,18 @@
+language: objective-c
+os: osx
+osx_image: xcode8.2
+
+git:
+  depth: 3
+
+branches:
+  only:
+    - master
+
+before_install:
+  - gem install xcpretty
+  - gem install xcpretty-travis-formatter
+  - xcodebuild -project RISCV.xcodeproj -list
+
+script:
+  - xcodebuild -project RISCV.xcodeproj build test | xcpretty -f `xcpretty-travis-formatter`
