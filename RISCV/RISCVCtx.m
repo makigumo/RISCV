@@ -1003,6 +1003,88 @@
             }
             break;
 
+        case OPCODE_AMO:
+            switch (funct3) {
+                case 0b010 /* RV32A */:
+                    switch(getFunct5(insncode)) {
+                        // RV32A Standard Extension
+                        case 0b00010 /* LR */:
+                            populateLR(disasm, insncode, "lr.w");
+                            break;
+                        case 0b00011 /* SC */:
+                            populateAMO(disasm, insncode, "sc.w");
+                            break;
+                        case 0b00001 /* AMOSWAP.W */:
+                            populateAMO(disasm, insncode, "amoswap.w");
+                            break;
+                        case 0b00000 /* AMOADD.W */:
+                            populateAMO(disasm, insncode, "amoadd.w");
+                            break;
+                        case 0b00100 /* AMOXOR.W */:
+                            populateAMO(disasm, insncode, "amoxor.w");
+                            break;
+                        case 0b01100 /* AMOAND.W */:
+                            populateAMO(disasm, insncode, "amoand.w");
+                            break;
+                        case 0b01000 /* AMOOR.W */:
+                            populateAMO(disasm, insncode, "amoor.w");
+                            break;
+                        case 0b10000 /* AMOMIN.W */:
+                            populateAMO(disasm, insncode, "amomin.w");
+                            break;
+                        case 0b10100 /* AMOMAX.W */:
+                            populateAMO(disasm, insncode, "amomax.w");
+                            break;
+                        case 0b11000 /* AMOMINU.W */:
+                            populateAMO(disasm, insncode, "amominu.w");
+                            break;
+                        case 0b11100 /* AMOMAXU.W */:
+                            populateAMO(disasm, insncode, "amomaxu.w");
+                            break;
+                    }
+                    break;
+
+                case 0b011 /* RV64A */:
+                    switch (getFunct5(insncode)) {
+                        // RV32A Standard Extension
+                        case 0b00010 /* LR.D */:
+                            populateLR(disasm, insncode, "lr.d");
+                            break;
+                        case 0b00011 /* SC.D */:
+                            populateAMO(disasm, insncode, "sc.d");
+                            break;
+                        case 0b00001 /* AMOSWAP.D */:
+                            populateAMO(disasm, insncode, "amoswap.d");
+                            break;
+                        case 0b00000 /* AMOADD.D */:
+                            populateAMO(disasm, insncode, "amoadd.d");
+                            break;
+                        case 0b00100 /* AMOXOR.D */:
+                            populateAMO(disasm, insncode, "amoxor.d");
+                            break;
+                        case 0b01100 /* AMOAND.D */:
+                            populateAMO(disasm, insncode, "amoand.d");
+                            break;
+                        case 0b01000 /* AMOOR.D */:
+                            populateAMO(disasm, insncode, "amoor.d");
+                            break;
+                        case 0b10000 /* AMOMIN.D */:
+                            populateAMO(disasm, insncode, "amomin.d");
+                            break;
+                        case 0b10100 /* AMOMAX.D */:
+                            populateAMO(disasm, insncode, "amomax.d");
+                            break;
+                        case 0b11000 /* AMOMINU.D */:
+                            populateAMO(disasm, insncode, "amominu.d");
+                            break;
+                        case 0b11100 /* AMOMAXU.D */:
+                            populateAMO(disasm, insncode, "amomaxu.d");
+                            break;
+                    }
+                    break;
+            }
+            break;
+
         default:
             break;
     }

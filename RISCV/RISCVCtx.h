@@ -25,6 +25,7 @@ extern NSString *getCsrName(uint64_t csr);
 #define SRC1_MASK       0x000F8000
 #define SRC2_MASK       0x01F00000
 #define FUNCT3_MASK     0x00007000
+#define FUNCT5_MASK     0xf8000000
 #define FUNCT7_MASK     0xfe000000
 #define FUNCT6_MASK     0xfc000000
 #define IMM_MASK        0xfffff000
@@ -47,6 +48,7 @@ extern NSString *getCsrName(uint64_t csr);
 #define OPCODE_JAL      (uint8_t) 0b1101111
 #define OPCODE_MISC_MEM (uint8_t) 0b0001111
 #define OPCODE_SYSTEM   (uint8_t) 0b1110011
+#define OPCODE_AMO      (uint8_t) 0b0101111
 
 typedef struct {
     uint8_t opcode; /* bits 6..0 */
@@ -104,6 +106,11 @@ static inline uint32_t getCsr(uint32_t insn) {
 // get funct3
 static inline uint8_t getFunct3(uint32_t insncode) {
     return (uint8_t) ((insncode & FUNCT3_MASK) >> 12);
+}
+
+// get funct5
+static inline uint8_t getFunct5(uint32_t insncode) {
+    return (uint8_t) ((insncode & FUNCT5_MASK) >> 27);
 }
 
 // get funct7
@@ -235,5 +242,32 @@ static inline void populateSTORE(DisasmStruct *disasm, uint32_t insn, const char
     disasm->operand[1].memory.baseRegistersMask = getRegMask(getRS1(insn));
     disasm->operand[1].memory.displacement = getStypeImmediate(insn);
     disasm->operand[1].memory.scale = 1;
+    disasm->operand[2].accessMode = DISASM_ACCESS_READ;
+}
+
+static inline void populateLR(DisasmStruct *disasm, uint32_t insn, const char *mnemonic) {
+    strcpy(disasm->instruction.mnemonic, mnemonic);
+    disasm->operand[0].type = DISASM_OPERAND_REGISTER_TYPE;
+    disasm->operand[0].type |= getRegMask(getRD(insn));
+    disasm->operand[0].accessMode = DISASM_ACCESS_WRITE;
+    disasm->operand[1].type = DISASM_OPERAND_MEMORY_TYPE;
+    disasm->operand[1].type |= getRegMask(getRS1(insn));
+    disasm->operand[1].memory.baseRegistersMask = getRegMask(getRS1(insn));
+    disasm->operand[1].memory.displacement = 0;
+    disasm->operand[1].accessMode = DISASM_ACCESS_READ;
+}
+
+static inline void populateAMO(DisasmStruct *disasm, uint32_t insn, const char *mnemonic) {
+    strcpy(disasm->instruction.mnemonic, mnemonic);
+    disasm->operand[0].type = DISASM_OPERAND_REGISTER_TYPE;
+    disasm->operand[0].type |= getRegMask(getRD(insn));
+    disasm->operand[0].accessMode = DISASM_ACCESS_WRITE;
+    disasm->operand[1].type = DISASM_OPERAND_REGISTER_TYPE;
+    disasm->operand[1].type |= getRegMask(getRS2(insn));
+    disasm->operand[1].accessMode = DISASM_ACCESS_WRITE;
+    disasm->operand[2].type = DISASM_OPERAND_MEMORY_TYPE;
+    disasm->operand[2].type |= getRegMask(getRS1(insn));
+    disasm->operand[2].memory.baseRegistersMask = getRegMask(getRS1(insn));
+    disasm->operand[2].memory.displacement = 0;
     disasm->operand[2].accessMode = DISASM_ACCESS_READ;
 }

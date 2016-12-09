@@ -6,8 +6,8 @@ Supported instruction sets:
 <!--- * [ ] RV32E Base Integer Instruction Set --->
 * [x] RV32M Standard Extension
 * [x] RV64M Standard Extension
-* [ ] RV32A Standard Extension
-* [ ] RV64A Standard Extension
+* [x] RV32A Standard Extension
+* [x] RV64A Standard Extension
 * [ ] RV32F Standard Extension
 * [ ] RV64F Standard Extension
 * [ ] RV32D Standard Extension
