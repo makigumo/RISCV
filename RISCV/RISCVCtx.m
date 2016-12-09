@@ -1272,15 +1272,18 @@ static inline int regIndexFromType(uint64_t type) {
 
     if (operand->type & DISASM_OPERAND_CONSTANT_TYPE) {
         if (operand->isBranchDestination) {
-            NSString *symbol = [_file nameForVirtualAddress:disasm->instruction.addressValue];
-            if (symbol) {
-                [line appendName:symbol atAddress:disasm->instruction.addressValue];
-            } else {
-                // TODO is there a better way to get the local name (?)
-                NSString *labelFormat = (bitsize == 32) ? @"loc_%x" : @"loc_%llx";
-                NSString *localLabel = [NSString stringWithFormat:labelFormat, disasm->instruction.addressValue];
-                [line appendLocalName:localLabel
+            NSObject <HPProcedure> *proc = [file procedureAt:disasm->virtualAddr];
+            if (proc && [proc hasLocalLabelAtAddress:disasm->instruction.addressValue]) {
+                NSString *label = [proc localLabelAtAddress:disasm->instruction.addressValue];
+                [line appendLocalName:label
                             atAddress:(Address) disasm->instruction.addressValue];
+            }
+            else {
+                [line appendRawString:@"#"];
+                [line append:[file formatNumber:(uint64_t) operand->immediateValue
+                                             at:disasm->virtualAddr
+                                    usingFormat:format
+                                     andBitSize:bitsize]];
             }
         } else if (strcmp(disasm->instruction.mnemonic, "fence") == 0 && operand->immediateValue != 0) {
             [line appendRawString:getIorw((uint8_t) operand->immediateValue)];
