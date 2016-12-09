@@ -745,12 +745,12 @@
             switch (funct3) {
                 case 0b000 /* PRIV : ECALL/EBREAK */:
                     switch (getItypeImmediate(insncode) /* funct12 */) {
-                        case 0:
+                        case 0b000000000000:
                             if (getRS1(insncode) == 0 && getRD(insncode) == 0) {
                                 strcpy(disasm->instruction.mnemonic, "ecall");
                             }
                             break;
-                        case 1:
+                        case 0b000000000001:
                             if (getRS1(insncode) == 0 && getRD(insncode) == 0) {
                                 strcpy(disasm->instruction.mnemonic, "ebreak");
                             }
@@ -1006,7 +1006,7 @@
         case OPCODE_AMO:
             switch (funct3) {
                 case 0b010 /* RV32A */:
-                    switch(getFunct5(insncode)) {
+                    switch (getFunct5(insncode)) {
                         // RV32A Standard Extension
                         case 0b00010 /* LR */:
                             populateLR(disasm, insncode, "lr.w");
@@ -1081,6 +1081,117 @@
                             populateAMO(disasm, insncode, "amomaxu.d");
                             break;
                     }
+                    break;
+            }
+            break;
+
+        case OPCODE_LOADFP:
+            // ccc1a087 -> flw ft1, -820(gp)
+            switch (funct3)  /* width */ {
+                case 0b010:
+                    strcpy(disasm->instruction.mnemonic, "flw");
+                    break;
+                case 0b011:
+                    strcpy(disasm->instruction.mnemonic, "fld");
+                    break;
+            }
+            disasm->operand[0].type = DISASM_OPERAND_REGISTER_TYPE;
+            disasm->operand[0].type |= getFpuRegMask(dest_reg);
+            disasm->operand[0].accessMode = DISASM_ACCESS_WRITE;
+            disasm->operand[1].type = DISASM_OPERAND_MEMORY_TYPE;
+            disasm->operand[1].type |= getRegMask(src1_reg);
+            disasm->operand[1].memory.baseRegistersMask = getRegMask(src1_reg);
+            disasm->operand[1].memory.displacement = getItypeImmediate(insncode);
+            disasm->operand[1].accessMode = DISASM_ACCESS_READ;
+            break;
+
+            break;
+
+        case OPCODE_STOREFP:
+            // 00b12627 -> fsw fa1, 12(sp)
+            switch (funct3) /* width */ {
+                case 0b010:
+                    strcpy(disasm->instruction.mnemonic, "fsw");
+                    break;
+                case 0b011:
+                    strcpy(disasm->instruction.mnemonic, "fsd");
+                    break;
+            }
+            disasm->operand[0].type = DISASM_OPERAND_REGISTER_TYPE;
+            disasm->operand[0].type |= getFpuRegMask(src2_reg);
+            disasm->operand[0].accessMode = DISASM_ACCESS_WRITE;
+            disasm->operand[1].type = DISASM_OPERAND_MEMORY_TYPE;
+            disasm->operand[1].type |= getRegMask(src1_reg);
+            disasm->operand[1].memory.baseRegistersMask = getRegMask(src1_reg);
+            disasm->operand[1].memory.displacement = getStypeImmediate(insncode);
+            disasm->operand[1].accessMode = DISASM_ACCESS_READ;
+            break;
+
+        case OPCODE_FP:
+            switch (funct7) {
+                case 0b0000000 /* FADD.S */:
+                    break;
+                case 0b0000100 /* FSUB.S */:
+                    break;
+                case 0b0001000 /* FMUL.S */:
+                    break;
+                case 0b0001100 /* FDIV.S */:
+                    break;
+                case 0b0101100 /* FSQRT.S */:
+                    break;
+                case 0b0010000 /* FSGN */:
+                    switch (funct3) {
+                        case 0b000 /* FSGNJ.S */:
+                            break;
+                        case 0b001 /* FSGNJN.S */:
+                            break;
+                        case 0b010 /* FSGNJX.S */:
+                            break;
+                    }
+                    break;
+                case 0b0010100 /* FMIN/FMAX */:
+                    switch (funct3) {
+                        case 0b000 /* FMIN.S */:
+                            break;
+                        case 0b001 /* FMAX.S */:
+                            break;
+                    }
+                    break;
+                case 0b1100000 /* FCVT */:
+                    switch (funct3) {
+                        case 0b000 /* FCVT.W.S */:
+                            break;
+                        case 0b001 /* FCVT.WU.S */:
+                            break;
+                    }
+                    break;
+                case 0b1110000:
+                    switch (funct3) {
+                        case 0b000 /* FMV.X.S */:
+                            break;
+                        case 0b001 /* FCLASS.S */:
+                            break;
+                    }
+                    break;
+                case 0b1010000:
+                    switch (funct3) {
+                        case 0b010 /* FEQ.S */:
+                            break;
+                        case 0b001 /* FLT.S */:
+                            break;
+                        case 0b000 /* FLE.S */:
+                            break;
+                    }
+                    break;
+                case 0b1101000:
+                    switch (src2_reg) {
+                        case 0b00000 /* FCVT.S.W */:
+                            break;
+                        case 0b00001 /* FCVT.S.WU */:
+                            break;
+                    }
+                    break;
+                case 0b1111000 /* FMV.S.X */:
                     break;
             }
             break;
@@ -1195,7 +1306,8 @@ static inline int regIndexFromType(uint64_t type) {
         NSString *reg_name = [_cpu registerIndexToString:regIdx
                                                  ofClass:regCls
                                              withBitSize:bitsize
-                                             andPosition:DISASM_LOWPOSITION];
+                                                position:DISASM_LOWPOSITION
+                                          andSyntaxIndex:disasm->syntaxIndex];
         if ([reg_name isEqualToString:@"csr"]) {
             reg_name = getCsrName(operand->userData[0]);
         }
@@ -1212,7 +1324,8 @@ static inline int regIndexFromType(uint64_t type) {
             NSString *reg_name = [_cpu registerIndexToString:regIdx
                                                      ofClass:regCls
                                                  withBitSize:bitsize
-                                                 andPosition:DISASM_LOWPOSITION];
+                                                    position:DISASM_LOWPOSITION
+                                              andSyntaxIndex:disasm->syntaxIndex];
 
             if ((format & Format_Default) == Format_Default) {
                 // clear default Format types

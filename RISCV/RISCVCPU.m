@@ -152,7 +152,8 @@
 - (NSString *)registerIndexToString:(NSUInteger)reg
                             ofClass:(RegClass)reg_class
                         withBitSize:(NSUInteger)size
-                        andPosition:(DisasmPosition)position {
+                           position:(DisasmPosition)position
+                     andSyntaxIndex:(NSUInteger)syntaxIndex {
     switch (reg_class) {
         case (RegClass) RegClass_RISCV_ABI:
             if (reg < 10) {
@@ -203,7 +204,9 @@
     return @"";
 }
 
-- (NSData *)nopWithSize:(NSUInteger)size andMode:(NSUInteger)cpuMode forFile:(NSObject <HPDisassembledFile> *)file {
+- (NSData *)nopWithSize:(NSUInteger)size
+                andMode:(NSUInteger)cpuMode
+                forFile:(NSObject <HPDisassembledFile> *)file {
     // Instruction size is always a multiple of 4
     if (size % 4 != 0) return nil;
     NSMutableData *nopArray = [[NSMutableData alloc] initWithCapacity:size];

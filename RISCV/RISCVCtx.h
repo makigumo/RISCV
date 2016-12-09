@@ -49,6 +49,13 @@ extern NSString *getCsrName(uint64_t csr);
 #define OPCODE_MISC_MEM (uint8_t) 0b0001111
 #define OPCODE_SYSTEM   (uint8_t) 0b1110011
 #define OPCODE_AMO      (uint8_t) 0b0101111
+#define OPCODE_LOADFP   (uint8_t) 0b0000111
+#define OPCODE_STOREFP  (uint8_t) 0b0100111
+#define OPCODE_FMADD    (uint8_t) 0b1000011
+#define OPCODE_FMSUB    (uint8_t) 0b1000111
+#define OPCODE_FNMSUB   (uint8_t) 0b1001011
+#define OPCODE_FNMADD   (uint8_t) 0b1001111
+#define OPCODE_FP       (uint8_t) 0b1010011
 
 typedef struct {
     uint8_t opcode; /* bits 6..0 */
