@@ -52,7 +52,7 @@
     return @"©2016 - Makigumo";
 }
 
-- (NSArray *)cpuFamilies {
+- (NSArray<NSString *> *)cpuFamilies {
     return @[@"RISCV"];
 }
 
@@ -60,7 +60,7 @@
     return @"0.0.1";
 }
 
-- (NSArray *)cpuSubFamiliesForFamily:(NSString *)family {
+- (NSArray<NSString *> *)cpuSubFamiliesForFamily:(NSString *)family {
     if ([family isEqualToString:@"RISCV"])
         return @[
                 @"riscv32",
@@ -89,11 +89,11 @@
     return 1;
 }
 
-- (NSArray *)syntaxVariantNames {
+- (NSArray<NSString *> *)syntaxVariantNames {
     return @[@"generic",];
 }
 
-- (NSArray *)cpuModeNames {
+- (NSArray<NSString *> *)cpuModeNames {
     return @[@"generic"];
 }
 
