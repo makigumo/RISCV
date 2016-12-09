@@ -15,4 +15,5 @@ before_install:
   - xcodebuild -project RISCV.xcodeproj -list
 
 script:
-  - xcodebuild -project RISCV.xcodeproj build test | xcpretty -f `xcpretty-travis-formatter`
+  - xcodebuild -project RISCV.xcodeproj -scheme RISCV build | xcpretty -f `xcpretty-travis-formatter`
+  - xcodebuild -project RISCV.xcodeproj -scheme RISCVTests test | xcpretty -f `xcpretty-travis-formatter`
