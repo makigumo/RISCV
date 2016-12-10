@@ -59,5 +59,11 @@
     XCTAssertEqual(getShamt64(0x4056d693), 0x5);
 }
 
+- (void)testGetRoundingMode {
+    XCTAssertEqual(getRoundingMode(0x0020f053), 0b111);
+    XCTAssertEqual(getRoundingMode(0x00208053), 0);
+    XCTAssertEqual(getRoundingMode(0x01f4c353), 0b100);
+}
+
 
 @end

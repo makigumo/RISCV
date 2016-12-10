@@ -728,9 +728,9 @@
                 case 0b000 /* FENCE */:
                     strcpy(disasm->instruction.mnemonic, "fence");
                     if (getPredecessor(insncode) != 0xf || getSuccessor(insncode) != 0xf) {
-                        disasm->operand[0].type = DISASM_OPERAND_CONSTANT_TYPE;
+                        disasm->operand[0].type = DISASM_OPERAND_CONSTANT_TYPE | DISASM_OPERAND_FENCE;
                         disasm->operand[0].immediateValue = getPredecessor(insncode);
-                        disasm->operand[1].type = DISASM_OPERAND_CONSTANT_TYPE;
+                        disasm->operand[1].type = DISASM_OPERAND_CONSTANT_TYPE | DISASM_OPERAND_FENCE;
                         disasm->operand[1].immediateValue = getSuccessor(insncode);
                     }
                     break;
@@ -1130,36 +1130,58 @@
         case OPCODE_FP:
             switch (funct7) {
                 case 0b0000000 /* FADD.S */:
+                    populateFP(disasm, insncode, "fadd.s");
                     break;
                 case 0b0000100 /* FSUB.S */:
+                    populateFP(disasm, insncode, "fsub.s");
                     break;
                 case 0b0001000 /* FMUL.S */:
+                    populateFP(disasm, insncode, "fmul.s");
                     break;
                 case 0b0001100 /* FDIV.S */:
+                    populateFP(disasm, insncode, "fdiv.s");
                     break;
                 case 0b0101100 /* FSQRT.S */:
+                    strcpy(disasm->instruction.mnemonic, "fsqrt.s");
+                    disasm->operand[0].type = DISASM_OPERAND_REGISTER_TYPE;
+                    disasm->operand[0].type |= getFpuRegMask(dest_reg);
+                    disasm->operand[0].accessMode = DISASM_ACCESS_WRITE;
+                    disasm->operand[1].type = DISASM_OPERAND_REGISTER_TYPE;
+                    disasm->operand[1].type |= getFpuRegMask(src1_reg);
+                    disasm->operand[1].accessMode = DISASM_ACCESS_READ;
+                    if (getRoundingMode(insncode) > 0) {
+                        disasm->operand[3].type = DISASM_OPERAND_CONSTANT_TYPE | DISASM_OPERAND_ROUNDING_MODE;
+                        disasm->operand[3].immediateValue = getRoundingMode(insncode);
+                        disasm->operand[3].accessMode = DISASM_ACCESS_READ;
+                    }
                     break;
                 case 0b0010000 /* FSGN */:
-                    switch (funct3) {
+                    switch (funct3) /* rm */ {
                         case 0b000 /* FSGNJ.S */:
+                            populateFP(disasm, insncode, "fsgnj.s");
                             break;
                         case 0b001 /* FSGNJN.S */:
+                            populateFP(disasm, insncode, "fsgnjn.s");
                             break;
                         case 0b010 /* FSGNJX.S */:
+                            populateFP(disasm, insncode, "fsgnjx.s");
                             break;
                     }
                     break;
                 case 0b0010100 /* FMIN/FMAX */:
-                    switch (funct3) {
+                    switch (funct3) /* rm */ {
                         case 0b000 /* FMIN.S */:
+                            populateFP(disasm, insncode, "fmin.s");
                             break;
                         case 0b001 /* FMAX.S */:
+                            populateFP(disasm, insncode, "fmax.s");
                             break;
                     }
                     break;
                 case 0b1100000 /* FCVT */:
-                    switch (funct3) {
+                    switch (funct3) /* rm */ {
                         case 0b000 /* FCVT.W.S */:
+                            populateFPCVT(disasm, insncode, "fcvt.w.s");
                             break;
                         case 0b001 /* FCVT.WU.S */:
                             break;
@@ -1194,6 +1216,22 @@
                 case 0b1111000 /* FMV.S.X */:
                     break;
             }
+            break;
+
+        case OPCODE_FMADD:
+            populateFPR4(disasm, insncode, "fmadd.s");
+            break;
+
+        case OPCODE_FMSUB:
+            populateFPR4(disasm, insncode, "fmsub.s");
+            break;
+
+        case OPCODE_FNMADD:
+            populateFPR4(disasm, insncode, "fnmadd.s");
+            break;
+
+        case OPCODE_FNMSUB:
+            populateFPR4(disasm, insncode, "fnmsub.s");
             break;
 
         default:
@@ -1271,22 +1309,28 @@ static inline int regIndexFromType(uint64_t type) {
     NSObject <HPASMLine> *line = [services blankASMLine];
 
     if (operand->type & DISASM_OPERAND_CONSTANT_TYPE) {
-        if (operand->isBranchDestination) {
+        if (operand->type & DISASM_OPERAND_ROUNDING_MODE) {
+            NSString *name = getRoundingModeName(operand->immediateValue);
+            if (name) {
+                [line appendFormattedNumber:name
+                                  withValue:@(operand->immediateValue)];
+            }
+        } else if (operand->type & DISASM_OPERAND_FENCE && operand->immediateValue != 0) {
+            [line appendFormattedNumber:getIorw((uint8_t) operand->immediateValue)
+                              withValue:@(operand->immediateValue)];
+        } else if (operand->isBranchDestination) {
             NSObject <HPProcedure> *proc = [file procedureAt:disasm->virtualAddr];
             if (proc && [proc hasLocalLabelAtAddress:disasm->instruction.addressValue]) {
                 NSString *label = [proc localLabelAtAddress:disasm->instruction.addressValue];
                 [line appendLocalName:label
                             atAddress:(Address) disasm->instruction.addressValue];
-            }
-            else {
+            } else {
                 [line appendRawString:@"#"];
                 [line append:[file formatNumber:(uint64_t) operand->immediateValue
                                              at:disasm->virtualAddr
                                     usingFormat:format
                                      andBitSize:bitsize]];
             }
-        } else if (strcmp(disasm->instruction.mnemonic, "fence") == 0 && operand->immediateValue != 0) {
-            [line appendRawString:getIorw((uint8_t) operand->immediateValue)];
         } else {
             if (format == Format_Default) {
                 // small values in decimal

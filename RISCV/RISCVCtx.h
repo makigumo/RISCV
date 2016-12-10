@@ -33,6 +33,7 @@ extern NSString *getCsrName(uint64_t csr);
 #define SHAMT64_MASK    0x03F00000
 #define PRED_MASK       0x0f000000
 #define SUCC_MASK       0x00f00000
+#define ROUNDING_MODE_MASK          0x00007000
 
 #define OPCODE_OPIMM    (uint8_t) 0b0010011
 #define OPCODE_OPIMM32  OPCODE_OPIMM
@@ -56,6 +57,9 @@ extern NSString *getCsrName(uint64_t csr);
 #define OPCODE_FNMSUB   (uint8_t) 0b1001011
 #define OPCODE_FNMADD   (uint8_t) 0b1001111
 #define OPCODE_FP       (uint8_t) 0b1010011
+
+#define DISASM_OPERAND_ROUNDING_MODE    0x0001000000000000llu
+#define DISASM_OPERAND_FENCE    0x0002000000000000llu
 
 typedef struct {
     uint8_t opcode; /* bits 6..0 */
@@ -135,6 +139,11 @@ static inline uint8_t getRS2(uint32_t insncode) {
     return (uint8_t) ((insncode & SRC2_MASK) >> 20);
 }
 
+// get source register 3
+static inline uint8_t getRS3(uint32_t insncode) {
+    return (uint8_t) (insncode >> 27);
+}
+
 // get source register 1
 static inline uint8_t getRS1(uint32_t insncode) {
     return (uint8_t) ((insncode & SRC1_MASK) >> 15);
@@ -163,6 +172,11 @@ static inline uint8_t getPredecessor(uint32_t insncode) {
 // get predecessor for fence instruction bits 23..20
 static inline uint8_t getSuccessor(uint32_t insncode) {
     return (uint8_t) (((uint32_t) (insncode & SUCC_MASK)) >> 20);
+}
+
+// get rounding mode for fp instruction bits 14..12
+static inline uint8_t getRoundingMode(uint32_t insncode) {
+    return (uint8_t) ((insncode & ROUNDING_MODE_MASK) >> 12);
 }
 
 static inline NSString *getIorw(uint8_t insncode) {
@@ -277,4 +291,77 @@ static inline void populateAMO(DisasmStruct *disasm, uint32_t insn, const char *
     disasm->operand[2].memory.baseRegistersMask = getRegMask(getRS1(insn));
     disasm->operand[2].memory.displacement = 0;
     disasm->operand[2].accessMode = DISASM_ACCESS_READ;
+}
+
+static inline void populateFP(DisasmStruct *disasm, uint32_t insn, const char *mnemonic) {
+    strcpy(disasm->instruction.mnemonic, mnemonic);
+    disasm->operand[0].type = DISASM_OPERAND_REGISTER_TYPE;
+    disasm->operand[0].type |= getFpuRegMask(getRD(insn));
+    disasm->operand[0].accessMode = DISASM_ACCESS_WRITE;
+    disasm->operand[1].type = DISASM_OPERAND_REGISTER_TYPE;
+    disasm->operand[1].type |= getFpuRegMask(getRS1(insn));
+    disasm->operand[1].accessMode = DISASM_ACCESS_READ;
+    disasm->operand[2].type = DISASM_OPERAND_REGISTER_TYPE;
+    disasm->operand[2].type |= getFpuRegMask(getRS2(insn));
+    disasm->operand[2].accessMode = DISASM_ACCESS_READ;
+    if (getRoundingMode(insn) < 0b111) {
+        disasm->operand[3].type = DISASM_OPERAND_CONSTANT_TYPE | DISASM_OPERAND_ROUNDING_MODE;
+        disasm->operand[3].immediateValue = getRoundingMode(insn);
+        disasm->operand[3].accessMode = DISASM_ACCESS_READ;
+    }
+}
+
+static inline void populateFPR4(DisasmStruct *disasm, uint32_t insn, const char *mnemonic) {
+    strcpy(disasm->instruction.mnemonic, mnemonic);
+    disasm->operand[0].type = DISASM_OPERAND_REGISTER_TYPE;
+    disasm->operand[0].type |= getFpuRegMask(getRD(insn));
+    disasm->operand[0].accessMode = DISASM_ACCESS_WRITE;
+    disasm->operand[1].type = DISASM_OPERAND_REGISTER_TYPE;
+    disasm->operand[1].type |= getFpuRegMask(getRS1(insn));
+    disasm->operand[1].accessMode = DISASM_ACCESS_READ;
+    disasm->operand[2].type = DISASM_OPERAND_REGISTER_TYPE;
+    disasm->operand[2].type |= getFpuRegMask(getRS2(insn));
+    disasm->operand[2].accessMode = DISASM_ACCESS_READ;
+    disasm->operand[3].type = DISASM_OPERAND_REGISTER_TYPE;
+    disasm->operand[3].type |= getFpuRegMask(getRS3(insn));
+    disasm->operand[3].accessMode = DISASM_ACCESS_READ;
+    if (getRoundingMode(insn) < 0b111) {
+        disasm->operand[4].type = DISASM_OPERAND_CONSTANT_TYPE | DISASM_OPERAND_ROUNDING_MODE;
+        disasm->operand[4].immediateValue = getRoundingMode(insn);
+        disasm->operand[4].accessMode = DISASM_ACCESS_READ;
+    }
+}
+
+static inline void populateFPCVT(DisasmStruct *disasm, uint32_t insn, const char *mnemonic) {
+    strcpy(disasm->instruction.mnemonic, mnemonic);
+    disasm->operand[0].type = DISASM_OPERAND_REGISTER_TYPE;
+    disasm->operand[0].type |= getFpuRegMask(getRD(insn));
+    disasm->operand[0].accessMode = DISASM_ACCESS_WRITE;
+    disasm->operand[1].type = DISASM_OPERAND_REGISTER_TYPE;
+    disasm->operand[1].type |= getFpuRegMask(getRS1(insn));
+    disasm->operand[1].accessMode = DISASM_ACCESS_READ;
+
+}
+
+static NSString *getRoundingModeName(int64_t rm) {
+    switch (rm) {
+        case 0b000:
+            return @"rne";
+        case 0b001:
+            return @"rtz";
+        case 0b010:
+            return @"rdn";
+        case 0b011:
+            return @"rup";
+        case 0b100:
+            return @"rmm";
+        case 0b101:
+        case 0b110:
+            return @"rm_invalid";
+        case 0b111 /* dynamic rm */:
+            return @"rm_dynamic";
+
+        default:
+            return @"rm_unk";
+    }
 }
