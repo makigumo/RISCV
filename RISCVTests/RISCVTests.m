@@ -65,5 +65,10 @@
     XCTAssertEqual(getRoundingMode(0x01f4c353), 0b100);
 }
 
+- (void)testGetFmt {
+    XCTAssertEqual(getFmt(0x509473cf), 0b00);
+    XCTAssertEqual(getFmt(0x2a418143), 0b01);
+}
+
 
 @end

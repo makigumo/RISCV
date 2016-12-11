@@ -33,6 +33,7 @@ extern NSString *getCsrName(uint64_t csr);
 #define SHAMT64_MASK    0x03F00000
 #define PRED_MASK       0x0f000000
 #define SUCC_MASK       0x00f00000
+#define FMT_MASK        0x06000000
 #define ROUNDING_MODE_MASK          0x00007000
 
 #define OPCODE_OPIMM    (uint8_t) 0b0010011
@@ -177,6 +178,11 @@ static inline uint8_t getSuccessor(uint32_t insncode) {
 // get rounding mode for fp instruction bits 14..12
 static inline uint8_t getRoundingMode(uint32_t insncode) {
     return (uint8_t) ((insncode & ROUNDING_MODE_MASK) >> 12);
+}
+
+// get format field, bits 26..25
+static inline uint8_t getFmt(uint32_t insncode) {
+    return (uint8_t) ((insncode & FMT_MASK) >> 25);
 }
 
 static inline NSString *getIorw(uint8_t insncode) {
