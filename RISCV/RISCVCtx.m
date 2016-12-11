@@ -1130,16 +1130,16 @@
         case OPCODE_FP:
             switch (funct7) {
                 case 0b0000000 /* FADD.S */:
-                    populateFP(disasm, insncode, "fadd.s");
+                    populateFp_3reg_with_rm(disasm, insncode, "fadd.s");
                     break;
                 case 0b0000100 /* FSUB.S */:
-                    populateFP(disasm, insncode, "fsub.s");
+                    populateFp_3reg_with_rm(disasm, insncode, "fsub.s");
                     break;
                 case 0b0001000 /* FMUL.S */:
-                    populateFP(disasm, insncode, "fmul.s");
+                    populateFp_3reg_with_rm(disasm, insncode, "fmul.s");
                     break;
                 case 0b0001100 /* FDIV.S */:
-                    populateFP(disasm, insncode, "fdiv.s");
+                    populateFp_3reg_with_rm(disasm, insncode, "fdiv.s");
                     break;
                 case 0b0101100 /* FSQRT.S */:
                     strcpy(disasm->instruction.mnemonic, "fsqrt.s");
@@ -1149,89 +1149,125 @@
                     disasm->operand[1].type = DISASM_OPERAND_REGISTER_TYPE;
                     disasm->operand[1].type |= getFpuRegMask(src1_reg);
                     disasm->operand[1].accessMode = DISASM_ACCESS_READ;
-                    if (getRoundingMode(insncode) > 0) {
-                        disasm->operand[3].type = DISASM_OPERAND_CONSTANT_TYPE | DISASM_OPERAND_ROUNDING_MODE;
-                        disasm->operand[3].immediateValue = getRoundingMode(insncode);
-                        disasm->operand[3].accessMode = DISASM_ACCESS_READ;
+                    if (getRoundingMode(insncode) < 0b111 /* dynamic */) {
+                        disasm->operand[2].type = DISASM_OPERAND_CONSTANT_TYPE | DISASM_OPERAND_ROUNDING_MODE;
+                        disasm->operand[2].immediateValue = getRoundingMode(insncode);
+                        disasm->operand[2].accessMode = DISASM_ACCESS_READ;
                     }
                     break;
                 case 0b0010000 /* FSGN */:
                     switch (funct3) /* rm */ {
                         case 0b000 /* FSGNJ.S */:
-                            populateFP(disasm, insncode, "fsgnj.s");
+                            if (src2_reg == src1_reg) {
+                                //  FSGNJ.S rx, ry, ry = FMV.S rx, ry
+                                populateFP_2reg(disasm, insncode, "fmv.s");
+                            } else {
+                                populateFp_3reg(disasm, insncode, "fsgnj.s");
+                            }
                             break;
                         case 0b001 /* FSGNJN.S */:
-                            populateFP(disasm, insncode, "fsgnjn.s");
+                            if (src2_reg == src1_reg) {
+                                // FSGNJN.S rx, ry, ry =  FNEG.S rx, ry
+                                populateFP_2reg(disasm, insncode, "fneg.s");
+                            } else {
+                                populateFp_3reg(disasm, insncode, "fsgnjn.s");
+                            }
                             break;
                         case 0b010 /* FSGNJX.S */:
-                            populateFP(disasm, insncode, "fsgnjx.s");
+                            if (src2_reg == src1_reg) {
+                                // FSGNJX.S rx, ry, ry = FABS.S rx, ry
+                                populateFP_2reg(disasm, insncode, "fabs.s");
+                            } else {
+                                populateFp_3reg(disasm, insncode, "fsgnjx.s");
+                            }
                             break;
                     }
                     break;
                 case 0b0010100 /* FMIN/FMAX */:
                     switch (funct3) /* rm */ {
                         case 0b000 /* FMIN.S */:
-                            populateFP(disasm, insncode, "fmin.s");
+                            populateFp_3reg(disasm, insncode, "fmin.s");
                             break;
                         case 0b001 /* FMAX.S */:
-                            populateFP(disasm, insncode, "fmax.s");
+                            populateFp_3reg(disasm, insncode, "fmax.s");
                             break;
                     }
                     break;
                 case 0b1100000 /* FCVT */:
-                    switch (funct3) /* rm */ {
-                        case 0b000 /* FCVT.W.S */:
-                            populateFPCVT(disasm, insncode, "fcvt.w.s");
+                    switch (src2_reg) /*  */ {
+                        case 0b00000 /* FCVT.W.S */:
+                            populateFp_gp_fp_with_rm(disasm, insncode, "fcvt.w.s");
                             break;
-                        case 0b001 /* FCVT.WU.S */:
+                        case 0b00001 /* FCVT.WU.S */:
+                            populateFp_gp_fp_with_rm(disasm, insncode, "fcvt.wu.s");
+                            break;
+                        case 0b00010 /* FCVT.L.S */:
+                            populateFp_gp_fp_with_rm(disasm, insncode, "fcvt.l.s");
+                            break;
+                        case 0b00011 /* FCVT.L.S */:
+                            populateFp_gp_fp_with_rm(disasm, insncode, "fcvt.lu.s");
                             break;
                     }
                     break;
                 case 0b1110000:
                     switch (funct3) {
                         case 0b000 /* FMV.X.S */:
+                            populateFp_gp_fp(disasm, insncode, "fmv.x.s");
                             break;
                         case 0b001 /* FCLASS.S */:
+                            populateFp_gp_fp(disasm, insncode, "fclass.s");
                             break;
                     }
                     break;
                 case 0b1010000:
                     switch (funct3) {
                         case 0b010 /* FEQ.S */:
+                            populateFp_3reg(disasm, insncode, "feq.s");
                             break;
                         case 0b001 /* FLT.S */:
+                            populateFp_3reg(disasm, insncode, "flt.s");
                             break;
                         case 0b000 /* FLE.S */:
+                            populateFp_3reg(disasm, insncode, "fle.s");
                             break;
                     }
                     break;
                 case 0b1101000:
                     switch (src2_reg) {
                         case 0b00000 /* FCVT.S.W */:
+                            populateFp_fp_gp_with_rm(disasm, insncode, "fcvt.s.w");
                             break;
                         case 0b00001 /* FCVT.S.WU */:
+                            populateFp_fp_gp_with_rm(disasm, insncode, "fcvt.s.wu");
+                            break;
+                        case 0b00010 /* FCVT.S.L */:
+                            populateFp_fp_gp_with_rm(disasm, insncode, "fcvt.s.l");
+                            break;
+                        case 0b00011 /* FCVT.S.LU */:
+                            populateFp_fp_gp_with_rm(disasm, insncode, "fcvt.s.lu");
                             break;
                     }
                     break;
                 case 0b1111000 /* FMV.S.X */:
+                    populateFp_fp_gp(disasm, insncode, "fmv.x.s");
                     break;
             }
             break;
 
         case OPCODE_FMADD:
-            populateFPR4(disasm, insncode, "fmadd.s");
+            populateFp_R4(disasm, insncode, "fmadd.s");
             break;
 
         case OPCODE_FMSUB:
-            populateFPR4(disasm, insncode, "fmsub.s");
+            populateFp_R4(disasm, insncode, "fmsub.s");
             break;
 
         case OPCODE_FNMADD:
-            populateFPR4(disasm, insncode, "fnmadd.s");
+            populateFp_R4(disasm, insncode, "fnmadd.s");
             break;
 
         case OPCODE_FNMSUB:
-            populateFPR4(disasm, insncode, "fnmsub.s");
+            populateFp_R4(disasm, insncode, "fnmsub.s");
             break;
 
         default:

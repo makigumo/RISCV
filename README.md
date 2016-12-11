@@ -10,8 +10,8 @@ Supported instruction sets:
 * [x] RV64M Standard Extension
 * [x] RV32A Standard Extension
 * [x] RV64A Standard Extension
-* [ ] RV32F Standard Extension
-* [ ] RV64F Standard Extension
+* [x] RV32F Standard Extension
+* [x] RV64F Standard Extension
 * [ ] RV32D Standard Extension
 * [ ] RV64D Standard Extension
 * [x] Trap-Return Instructions
