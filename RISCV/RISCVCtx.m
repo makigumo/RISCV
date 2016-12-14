@@ -121,7 +121,7 @@
     uint32_t insncode = disasm->bytes[3] << 24 | disasm->bytes[2] << 16 | disasm->bytes[1] << 8 | disasm->bytes[0];
     uint8_t opcode = getOpcode(insncode);
 
-    // all instructions are 32 bit
+    // all standard instructions are 32 bit
     int len = 4;
     disasm->instruction.length = 4;
     disasm->instruction.branchType = DISASM_BRANCH_NONE;
@@ -132,14 +132,6 @@
     uint8_t src2_reg = getRS2(insncode);
     uint8_t funct3 = getFunct3(insncode);
     uint8_t funct7 = getFunct7(insncode);
-
-#if NDEBUG
-    if ((disasm->virtualAddr & 0xffffffff) == 0x80000400) {
-        NSObject <HPHopperServices> *services = _cpu.hopperServices;
-        [services logMessage:[NSString stringWithFormat:@"opcode:%d, funct3:%d, rd:%d, rs1:%d, rs2:%d, imm:%0x, funct7:%0x, shamt:%0x",
-                                                        opcode, funct3, dest_reg, src1_reg, src2_reg, getItypeImmediate(insncode), funct7, getShamt(insncode)]];
-    }
-#endif
 
     switch (opcode) {
 
