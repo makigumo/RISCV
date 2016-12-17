@@ -1504,18 +1504,13 @@ static inline int regIndexFromType(uint64_t type) {
             [line appendFormattedNumber:getIorw((uint8_t) operand->immediateValue)
                               withValue:@(operand->immediateValue)];
         } else if (operand->isBranchDestination) {
-            NSObject <HPProcedure> *proc = [file procedureAt:disasm->virtualAddr];
-            if (proc && [proc hasLocalLabelAtAddress:disasm->instruction.addressValue]) {
-                NSString *label = [proc localLabelAtAddress:disasm->instruction.addressValue];
-                [line appendLocalName:label
-                            atAddress:(Address) disasm->instruction.addressValue];
-            } else {
-                [line appendRawString:@"#"];
-                [line append:[file formatNumber:(uint64_t) operand->immediateValue
-                                             at:disasm->virtualAddr
-                                    usingFormat:format
-                                     andBitSize:bitsize]];
+            if (format == Format_Default) {
+                format = Format_Address;
             }
+            [line append:[file formatNumber:disasm->instruction.addressValue
+                                         at:disasm->virtualAddr
+                                usingFormat:format
+                                 andBitSize:bitsize]];
         } else {
             if (format == Format_Default) {
                 // small values in decimal
