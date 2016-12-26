@@ -27,4 +27,4 @@ deploy:
   draft: true
   on:
     repo: makigumo/RISCV
-    tags: true
+    #tags: true
