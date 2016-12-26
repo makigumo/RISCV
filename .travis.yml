@@ -12,8 +12,19 @@ branches:
 before_install:
   - gem install xcpretty
   - gem install xcpretty-travis-formatter
-  - xcodebuild -project RISCV.xcodeproj -list
 
 script:
-  - xcodebuild -project RISCV.xcodeproj -scheme RISCV build | xcpretty -f `xcpretty-travis-formatter`
+  - xcodebuild -project RISCV.xcodeproj -scheme RISCV build -configuration Release | xcpretty -f `xcpretty-travis-formatter`
   - xcodebuild -project RISCV.xcodeproj -scheme RISCVTests test | xcpretty -f `xcpretty-travis-formatter`
+
+deploy:
+  provider: releases
+  api_key:
+    secure: KutNTNIv+DLcumYtQ+xtp0OsW9vf9NyTI+2gs4pAH9txalSaPhn5D17MOhOVR5zJH6tCpTngcuUrFcHHVcnUII3GuDBd6/Ifsw0oHgCghkLGTD4LgHIlONFd4ge6wAoVWVI37zmv4yRKyOOENndh59RGEy8fEdvfhtSt1la7smXzp6370r+DrGEIGaa14LVFr0ojdW0FQ3Nocn1XPvu6Obe/euG9XOaw1XNT67VH28HnX83D62jGL1Rlv50vfwej3aR++/BU15WeozecMEO8Zn2+JNfMeKI8Rc8slSfa/q+rnHXD76K9t6N2s9gAEvmRHXzWV7SkdueQ9pmHmsMm17b1VsS+uCSHNcrmeIM0w6oPGMhHKrQzYQmdsZauiZxkr/Hl2zs6lYV0VcG/MIeY6twDrGnX41AV7IkCSKYGAGVoQLbJAFJkT4G+v8K+hiR9HDaVg3bDxfqV/ZvH87BZwFtsV0/jIFoxSyyncjoLoendQ5M6HpQyuDPy9gwKWSK2yXD2wkgqlre+1sB5IKxDVWb+P32msc5qx5WWayuEp1Q4Dlf8rb95jxXQBCVOl6d7eIlKcLjp2e9nQ8c+w1gEdSJzfyOsJGCByN148GhhfsI51ZLo0IE2fn/2H+Z0exndMAqm5K16UnJUwnD63OGFJv2hg3yHoIBHFJ3/FjvmBnY=
+  file: Build/Products/Release/RISCV.zip
+  skip_cleanup: true
+  overwrite: true
+  draft: true
+  on:
+    repo: makigumo/RISCV
+    tags: true
