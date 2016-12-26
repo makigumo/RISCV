@@ -62,14 +62,72 @@ extern NSString *getCsrName(uint64_t csr);
 #define DISASM_OPERAND_ROUNDING_MODE    0x0001000000000000llu
 #define DISASM_OPERAND_FENCE    0x0002000000000000llu
 
-typedef struct {
+typedef enum INSN_TYPE {
+    ITYPE,
+    RTYPE,
+    UTYPE,
+    STYPE,
+    SBTYPE,
+    UJTYPE
+};
+
+typedef struct itype_insn {
     uint8_t opcode; /* bits 6..0 */
     uint8_t reg_dest; /* bits 11..7 */
     uint8_t funct3; /* bits 14..12 */
     uint8_t reg_src1; /* bits 19..15 */
-    uint8_t reg_src2; /* bits 24..20 */
+    uint16_t imm; /* bits 31..20 */
+};
+
+typedef struct rtype_insn {
+    uint8_t opcode; /* bits 6..0 */
+    uint8_t reg_dest; /* bits 11..7 */
+    uint8_t funct3; /* bits 14..12 */
+    uint8_t reg_src1; /* bits 19..15 */
+    uint8_t reg_src2; /* bits 31..20 */
     uint8_t funct7; /* bits 31..25 */
-} rtype_insn;
+};
+
+typedef struct stype_insn {
+    uint8_t opcode; /* bits 6..0 */
+    uint8_t funct3; /* bits 14..12 */
+    uint8_t reg_src1; /* bits 19..15 */
+    uint8_t reg_src2; /* bits 31..20 */
+    uint16_t imm; /* bits 31..25 11..7 */
+};
+
+typedef struct utype_insn {
+    uint8_t opcode; /* bits 6..0 */
+    uint8_t reg_dest; /* bits 11..7 */
+    uint16_t imm; /* bits 31..12 */
+};
+
+typedef struct insn {
+    uint8_t opcode;
+    enum INSN_TYPE type;
+    union {
+        struct itype_insn itype;
+        struct rtype_insn rtype;
+        struct stype_insn stype;
+        struct utype_insn utype;
+    };
+};
+
+typedef enum FpuFormat {
+    FPU_FMT_SINGLE = 0b00,
+    FPU_FMT_DOUBLE = 0b01,
+    FPU_FMT_INVALID = 0b10,
+    FPU_FMT_QUAD = 0b11,
+};
+
+typedef enum FpuRoundingMode {
+    FPU_RM_RNE = 0b000,
+    FPU_RM_RTZ = 0b001,
+    FPU_RM_RDN = 0b010,
+    FPU_RM_RUP = 0b011,
+    FPU_RM_RMM = 0b100,
+    FPU_RM_DYNAMIC = 0b111,
+};
 
 // return the 7-bit opcode, bits 6..0
 static inline uint8_t getOpcode(uint32_t insn) {
@@ -176,13 +234,13 @@ static inline uint8_t getSuccessor(uint32_t insncode) {
 }
 
 // get rounding mode for fp instruction bits 14..12
-static inline uint8_t getRoundingMode(uint32_t insncode) {
-    return (uint8_t) ((insncode & ROUNDING_MODE_MASK) >> 12);
+static inline enum FpuRoundingMode getRoundingMode(uint32_t insncode) {
+    return (enum FpuRoundingMode) ((insncode >> 12) & 0b111);
 }
 
 // get format field, bits 26..25
-static inline uint8_t getFmt(uint32_t insncode) {
-    return (uint8_t) ((insncode & FMT_MASK) >> 25);
+static inline enum FpuFormat getFmt(uint32_t insncode) {
+    return (enum FpuFormat) ((insncode >> 25) & 0b11);
 }
 
 static inline NSString *getIorw(uint8_t insncode) {
@@ -373,25 +431,23 @@ static inline void populateFp_R4(DisasmStruct *disasm, uint32_t insn, const char
 }
 
 
-static NSString *getRoundingModeName(int64_t rm) {
+static inline NSString *getRoundingModeName(enum FpuRoundingMode rm) {
     switch (rm) {
-        case 0b000:
+        case FPU_RM_RNE:
             return @"rne";
-        case 0b001:
+        case FPU_RM_RTZ:
             return @"rtz";
-        case 0b010:
+        case FPU_RM_RDN:
             return @"rdn";
-        case 0b011:
+        case FPU_RM_RUP:
             return @"rup";
-        case 0b100:
+        case FPU_RM_RMM:
             return @"rmm";
-        case 0b101:
-        case 0b110:
-            return @"rm_invalid";
-        case 0b111 /* dynamic rm */:
-            return @"rm_dynamic";
+        case FPU_RM_DYNAMIC:
+            return NULL;
+            //return @"dyn";
 
         default:
-            return @"rm_unk";
+            return @"invalid/reserved";
     }
 }

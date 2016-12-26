@@ -60,14 +60,14 @@
 }
 
 - (void)testGetRoundingMode {
-    XCTAssertEqual(getRoundingMode(0x0020f053), 0b111);
-    XCTAssertEqual(getRoundingMode(0x00208053), 0);
-    XCTAssertEqual(getRoundingMode(0x01f4c353), 0b100);
+    XCTAssertEqual(getRoundingMode(0x0020f053), FPU_RM_DYNAMIC);
+    XCTAssertEqual(getRoundingMode(0x00208053), FPU_RM_RNE);
+    XCTAssertEqual(getRoundingMode(0x01f4c353), FPU_RM_RMM);
 }
 
 - (void)testGetFmt {
-    XCTAssertEqual(getFmt(0x509473cf), 0b00);
-    XCTAssertEqual(getFmt(0x2a418143), 0b01);
+    XCTAssertEqual(getFmt(0x509473cf), FPU_FMT_SINGLE);
+    XCTAssertEqual(getFmt(0x2a418143), FPU_FMT_DOUBLE);
 }
 
 

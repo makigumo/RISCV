@@ -796,14 +796,35 @@
                     // Atomic Read/Write CSR
                     if (dest_reg == 0 /* zero */) {
                         // CSRW csr, rs1 = CSRRW zero, csr, rs1
-                        strcpy(disasm->instruction.mnemonic, "csrw");
-                        disasm->operand[0].type = DISASM_OPERAND_REGISTER_TYPE;
-                        disasm->operand[0].type |= getCsrMask();
-                        disasm->operand[0].accessMode = DISASM_ACCESS_READ;
-                        disasm->operand[0].userData[0] = getCsr(insncode);
-                        disasm->operand[1].type = DISASM_OPERAND_REGISTER_TYPE;
-                        disasm->operand[1].type |= getRegMask(src1_reg);
-                        disasm->operand[1].accessMode = DISASM_ACCESS_READ;
+                        switch (getCsr(insncode)) {
+                            case 0x001 /* FLAGS */:
+                                strcpy(disasm->instruction.mnemonic, "fsflags");
+                                disasm->operand[0].type = DISASM_OPERAND_REGISTER_TYPE;
+                                disasm->operand[0].type |= getRegMask(src1_reg);
+                                disasm->operand[0].accessMode = DISASM_ACCESS_READ;
+                                break;
+                            case 0x002 /* FRM */:
+                                strcpy(disasm->instruction.mnemonic, "fsrm");
+                                disasm->operand[0].type = DISASM_OPERAND_REGISTER_TYPE;
+                                disasm->operand[0].type |= getRegMask(src1_reg);
+                                disasm->operand[0].accessMode = DISASM_ACCESS_READ;
+                                break;
+                            case 0x003 /* FCSR */:
+                                strcpy(disasm->instruction.mnemonic, "fssr");
+                                disasm->operand[0].type = DISASM_OPERAND_REGISTER_TYPE;
+                                disasm->operand[0].type |= getRegMask(src1_reg);
+                                disasm->operand[0].accessMode = DISASM_ACCESS_READ;
+                                break;
+                            default:
+                                strcpy(disasm->instruction.mnemonic, "csrw");
+                                disasm->operand[0].type = DISASM_OPERAND_REGISTER_TYPE;
+                                disasm->operand[0].type |= getCsrMask();
+                                disasm->operand[0].accessMode = DISASM_ACCESS_READ;
+                                disasm->operand[0].userData[0] = getCsr(insncode);
+                                disasm->operand[1].type = DISASM_OPERAND_REGISTER_TYPE;
+                                disasm->operand[1].type |= getRegMask(src1_reg);
+                                disasm->operand[1].accessMode = DISASM_ACCESS_READ;
+                        }
                     } else {
                         strcpy(disasm->instruction.mnemonic, "cssrw");
                         disasm->operand[0].type = DISASM_OPERAND_REGISTER_TYPE;
@@ -823,6 +844,24 @@
                     if (src1_reg == 0 /* zero */) {
                         // CSRR rd, csr = CSRRS rd, csr, zero
                         switch (getCsr(insncode)) {
+                            case 0x001 /* FLAGS */:
+                                strcpy(disasm->instruction.mnemonic, "frflags");
+                                disasm->operand[0].type = DISASM_OPERAND_REGISTER_TYPE;
+                                disasm->operand[0].type |= getRegMask(dest_reg);
+                                disasm->operand[0].accessMode = DISASM_ACCESS_WRITE;
+                                break;
+                            case 0x002 /* FRM */:
+                                strcpy(disasm->instruction.mnemonic, "frrm");
+                                disasm->operand[0].type = DISASM_OPERAND_REGISTER_TYPE;
+                                disasm->operand[0].type |= getRegMask(dest_reg);
+                                disasm->operand[0].accessMode = DISASM_ACCESS_WRITE;
+                                break;
+                            case 0x003 /* FCSR */:
+                                strcpy(disasm->instruction.mnemonic, "frsr");
+                                disasm->operand[0].type = DISASM_OPERAND_REGISTER_TYPE;
+                                disasm->operand[0].type |= getRegMask(dest_reg);
+                                disasm->operand[0].accessMode = DISASM_ACCESS_WRITE;
+                                break;
                             case 0xc00 /* RDCYCLE */:
                                 strcpy(disasm->instruction.mnemonic, "rdcycle");
                                 disasm->operand[0].type = DISASM_OPERAND_REGISTER_TYPE;
@@ -1367,13 +1406,13 @@
 
         case OPCODE_FMADD:
             switch (getFmt(insncode)) {
-                case 0b00:
+                case FPU_FMT_SINGLE:
                     populateFp_R4(disasm, insncode, "fmadd.s");
                     break;
-                case 0b01:
+                case FPU_FMT_DOUBLE:
                     populateFp_R4(disasm, insncode, "fmadd.d");
                     break;
-                case 0b11:
+                case FPU_FMT_QUAD:
                     populateFp_R4(disasm, insncode, "fmadd.q");
                     break;
             }
@@ -1381,13 +1420,13 @@
 
         case OPCODE_FMSUB:
             switch (getFmt(insncode)) {
-                case 0b00:
+                case FPU_FMT_SINGLE:
                     populateFp_R4(disasm, insncode, "fmsub.s");
                     break;
-                case 0b01:
+                case FPU_FMT_DOUBLE:
                     populateFp_R4(disasm, insncode, "fmsub.d");
                     break;
-                case 0b11:
+                case FPU_FMT_QUAD:
                     populateFp_R4(disasm, insncode, "fmsub.q");
                     break;
             }
@@ -1395,13 +1434,13 @@
 
         case OPCODE_FNMADD:
             switch (getFmt(insncode)) {
-                case 0b00:
+                case FPU_FMT_SINGLE:
                     populateFp_R4(disasm, insncode, "fnmadd.s");
                     break;
-                case 0b01:
+                case FPU_FMT_DOUBLE:
                     populateFp_R4(disasm, insncode, "fnmadd.d");
                     break;
-                case 0b11:
+                case FPU_FMT_QUAD:
                     populateFp_R4(disasm, insncode, "fnmadd.q");
                     break;
             }
@@ -1409,13 +1448,13 @@
 
         case OPCODE_FNMSUB:
             switch (getFmt(insncode)) {
-                case 0b00:
+                case FPU_FMT_SINGLE:
                     populateFp_R4(disasm, insncode, "fnmsub.s");
                     break;
-                case 0b01:
+                case FPU_FMT_DOUBLE:
                     populateFp_R4(disasm, insncode, "fnmsub.d");
                     break;
-                case 0b11:
+                case FPU_FMT_QUAD:
                     populateFp_R4(disasm, insncode, "fnmsub.q");
                     break;
             }
@@ -1497,7 +1536,7 @@ static inline int regIndexFromType(uint64_t type) {
 
     if (operand->type & DISASM_OPERAND_CONSTANT_TYPE) {
         if (operand->type & DISASM_OPERAND_ROUNDING_MODE) {
-            NSString *name = getRoundingModeName(operand->immediateValue);
+            NSString *name = getRoundingModeName((enum FpuRoundingMode) operand->immediateValue);
             if (name) {
                 [line appendFormattedNumber:name
                                   withValue:@(operand->immediateValue)];
@@ -1624,6 +1663,27 @@ static inline int regIndexFromType(uint64_t type) {
     }
 
     return line;
+}
+
+/**
+ * Build an address from auipc, addi instructions
+ *
+ * @param disasm current DisasmStruct
+ * @param in current instruction
+ */
+- (void)buildAddress:(DisasmStruct *)disasm
+            withInsn:(const struct insn *)in {
+    // fetch previous instruction
+    uint32_t prev = [_file readUInt32AtVirtualAddress:disasm->virtualAddr - 4];
+    struct insn *prevIn = 0;//getInsn(prev);
+    if (prevIn && prevIn->opcode == 0b001111 /* LUI */ &&
+            prevIn->itype.reg_dest == in->itype.reg_src1) {
+
+        disasm->instruction.addressValue = (uint32_t) ((prevIn->itype.imm << 16) + ((int16_t) in->itype.imm));
+        NSObject <HPSegment> *segment = [_file segmentForVirtualAddress:disasm->virtualAddr];
+        [segment addReferencesToAddress:(uint32_t) disasm->instruction.addressValue
+                            fromAddress:disasm->virtualAddr];
+    }
 }
 
 // Decompiler
