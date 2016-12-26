@@ -224,7 +224,6 @@
                 disasm->operand[0].type |= getRegMask(src1_reg);
                 disasm->operand[0].memory.baseRegistersMask = getRegMask(src1_reg);
                 disasm->operand[0].memory.displacement = getItypeImmediate(insncode);
-                disasm->operand[0].memory.scale = 1;
                 disasm->operand[0].accessMode = DISASM_ACCESS_READ;
                 disasm->operand[0].isBranchDestination = 1;
                 disasm->instruction.branchType = DISASM_BRANCH_CALL;
@@ -236,6 +235,9 @@
                 disasm->operand[0].type = DISASM_OPERAND_REGISTER_TYPE;
                 disasm->operand[0].type |= getRegMask(dest_reg);
                 disasm->operand[0].accessMode = DISASM_ACCESS_WRITE;
+                disasm->operand[1].type = DISASM_OPERAND_MEMORY_TYPE;
+                disasm->operand[1].type |= getRegMask(src1_reg);
+                disasm->operand[1].memory.displacement = getItypeImmediate(insncode);
                 disasm->operand[1].accessMode = DISASM_ACCESS_READ;
                 disasm->operand[1].isBranchDestination = 1;
                 disasm->instruction.branchType = DISASM_BRANCH_CALL;
