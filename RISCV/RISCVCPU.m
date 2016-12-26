@@ -7,7 +7,6 @@
 //
 
 #import "RISCVCtx.h"
-#import "RISCVCPU.h"
 
 @implementation RISCVCPU {
     NSObject <HPHopperServices> *_services;
@@ -57,7 +56,7 @@
 }
 
 - (NSString *)pluginVersion {
-    return @"0.0.1";
+    return @"0.1.0";
 }
 
 - (NSArray<NSString *> *)cpuSubFamiliesForFamily:(NSString *)family {

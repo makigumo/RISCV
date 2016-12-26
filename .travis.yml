@@ -24,7 +24,8 @@ deploy:
   file: $TRAVIS_BUILD_DIR/RISCV.zip
   skip_cleanup: true
   overwrite: true
-  draft: true
+  #draft: true
+  prerelease: true
   on:
     repo: makigumo/RISCV
     #tags: true
