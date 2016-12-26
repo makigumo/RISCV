@@ -186,7 +186,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/bash;
-			shellScript = "rm -rf \"${INSTALL_PATH}/RISCV.hopperCPU\"\nmkdir -p \"${INSTALL_PATH}\"\ncp -rf \"${BUILT_PRODUCTS_DIR}/RISCV.hopperCPU\" \"${INSTALL_PATH}\"\n# create zip\ncd \"${BUILT_PRODUCTS_DIR}\"\nrm -f RISCV.zip\nzip -r \"RISCV\" \"RISCV.hopperCPU\"";
+			shellScript = "rm -rf \"${INSTALL_PATH}/RISCV.hopperCPU\"\nmkdir -p \"${INSTALL_PATH}\"\ncp -rf \"${BUILT_PRODUCTS_DIR}/RISCV.hopperCPU\" \"${INSTALL_PATH}\"\n# create zip\nrm -f \"${PROJECT_DIR}/RISCV.zip\"\ncd \"${BUILT_PRODUCTS_DIR}\"\nzip -r \"${PROJECT_DIR}/RISCV.zip\" \"RISCV.hopperCPU\"";
 			showEnvVarsInLog = 0;
 		};
 /* End PBXShellScriptBuildPhase section */
