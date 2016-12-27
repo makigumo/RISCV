@@ -12,7 +12,7 @@ Supported instruction sets:
 * [x] RV32A/RV64A Standard Extension for Atomic Instructions
 * [x] RV32F/RV64F Standard Extension for Single-Precision Floating-Point
 * [x] RV32D/RV64D Standard Extension for Double-Precision Floating-Point
-* [ ] RV32Q/RV64Q Standard Extension for Quad-Precision Floating-Point
+* [x] RV32Q/RV64Q Standard Extension for Quad-Precision Floating-Point
 * [ ] RV32L/RV64L Standard Extension for Decimal Floating-Point
 * [ ] RV32C/RV64C Standard Extension for Compressed Instructions
 * [ ] RV32V/RV64V Standard Extension for Vector Operations
