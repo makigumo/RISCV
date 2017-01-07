@@ -8,7 +8,7 @@ Supported instruction sets:
 * [x] RV128I Base Integer Instruction Set
 * [x] RV32E Base Integer Instruction Set
    * limited to 16 registers
-* [x] RV32M/RV64M Standard Extension for Integer Multiplication and Division
+* [x] RV32M/RV64M/RV128M Standard Extension for Integer Multiplication and Division
 * [x] RV32A/RV64A Standard Extension for Atomic Instructions
 * [x] RV32F/RV64F Standard Extension for Single-Precision Floating-Point
 * [x] RV32D/RV64D Standard Extension for Double-Precision Floating-Point

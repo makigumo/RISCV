@@ -669,7 +669,25 @@
                             break;
                     }
                     break;
-
+                case 0b0000001 /* MULDIV */:
+                    switch (funct3) {
+                        case 0b000 /* MULD */:
+                            populateOP(disasm, insncode, "muld");
+                            break;
+                        case 0b100 /* DIVD */:
+                            populateOP(disasm, insncode, "divd");
+                            break;
+                        case 0b101 /* DIVUD */:
+                            populateOP(disasm, insncode, "divud");
+                            break;
+                        case 0b110 /* REMD */:
+                            populateOP(disasm, insncode, "remd");
+                            break;
+                        case 0b111 /* REMUD */:
+                            populateOP(disasm, insncode, "remud");
+                            break;
+                    }
+                    break;
                 case 0b0100000:
                     switch (funct3) {
                         case 0b000 /* subd */:
