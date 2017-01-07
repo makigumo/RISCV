@@ -654,7 +654,7 @@
             }
             break;
 
-        case OPCODE_OP128
+        case OPCODE_OP128:
             switch(funct7) {
                 case 0b0000000:
                     switch (funct3) {
@@ -1091,6 +1091,45 @@
                             break;
                         case 0b11100 /* AMOMAXU.D */:
                             populateAMO(disasm, insncode, "amomaxu.d");
+                            break;
+                    }
+                    break;
+
+                case 0b100 /* RV128A */:
+                    switch (getFunct5(insncode)) {
+                        // RV32A Standard Extension
+                        case 0b00010 /* LR.Q */:
+                            populateLR(disasm, insncode, "lr.q");
+                            break;
+                        case 0b00011 /* SC.Q */:
+                            populateAMO(disasm, insncode, "sc.q");
+                            break;
+                        case 0b00001 /* AMOSWAP.Q */:
+                            populateAMO(disasm, insncode, "amoswap.q");
+                            break;
+                        case 0b00000 /* AMOADD.Q */:
+                            populateAMO(disasm, insncode, "amoadd.q");
+                            break;
+                        case 0b00100 /* AMOXOR.Q */:
+                            populateAMO(disasm, insncode, "amoxor.q");
+                            break;
+                        case 0b01100 /* AMOAND.Q */:
+                            populateAMO(disasm, insncode, "amoand.q");
+                            break;
+                        case 0b01000 /* AMOOR.Q */:
+                            populateAMO(disasm, insncode, "amoor.q");
+                            break;
+                        case 0b10000 /* AMOMIN.Q */:
+                            populateAMO(disasm, insncode, "amomin.q");
+                            break;
+                        case 0b10100 /* AMOMAX.Q */:
+                            populateAMO(disasm, insncode, "amomax.q");
+                            break;
+                        case 0b11000 /* AMOMINU.Q */:
+                            populateAMO(disasm, insncode, "amominu.q");
+                            break;
+                        case 0b11100 /* AMOMAXU.Q */:
+                            populateAMO(disasm, insncode, "amomaxu.q");
                             break;
                     }
                     break;
