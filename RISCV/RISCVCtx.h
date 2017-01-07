@@ -8,6 +8,7 @@
 
 #import <Foundation/Foundation.h>
 #import <Hopper/Hopper.h>
+#import <Hopper/DisasmStruct.h>
 #import "RISCVCPU.h"
 
 @class RISCVCPU;
@@ -29,8 +30,9 @@ extern NSString *getCsrName(uint64_t csr);
 #define FUNCT7_MASK     0xfe000000
 #define FUNCT6_MASK     0xfc000000
 #define IMM_MASK        0xfffff000
-#define SHAMT_MASK      0x01F00000
-#define SHAMT64_MASK    0x03F00000
+#define SHAMT4_MASK     0x01F00000
+#define SHAMT5_MASK     0x03F00000
+#define SHAMT6_MASK     0x07F00000
 #define PRED_MASK       0x0f000000
 #define SUCC_MASK       0x00f00000
 #define FMT_MASK        0x06000000
@@ -39,10 +41,12 @@ extern NSString *getCsrName(uint64_t csr);
 #define OPCODE_OPIMM    (uint8_t) 0b0010011
 #define OPCODE_OPIMM32  OPCODE_OPIMM
 #define OPCODE_OPIMM64  (uint8_t) 0b0011011
+#define OPCODE_OPIMM128 (uint8_t) 0b1011011
 #define OPCODE_LOAD     (uint8_t) 0b0000011
 #define OPCODE_STORE    (uint8_t) 0b0100011
 #define OPCODE_OP       (uint8_t) 0b0110011
 #define OPCODE_OP32     (uint8_t) 0b0111011
+#define OPCODE_OP128    (uint8_t) 0b1111011
 #define OPCODE_AUIPC    (uint8_t) 0b0010111
 #define OPCODE_LUI      (uint8_t) 0b0110111
 #define OPCODE_BRANCH   (uint8_t) 0b1100011
@@ -214,13 +218,18 @@ static inline uint8_t getRD(uint32_t insncode) {
 }
 
 // get shift amount
-static inline uint8_t getShamt(uint32_t insncode) {
-    return (uint8_t) (((uint32_t) (insncode & SHAMT_MASK)) >> 20);
+static inline uint8_t getShamt4(uint32_t insncode) {
+    return (uint8_t) (((uint32_t) (insncode & SHAMT4_MASK)) >> 20);
 }
 
 // get shift amount 64 bit extension
-static inline uint8_t getShamt64(uint32_t insncode) {
-    return (uint8_t) (((uint32_t) (insncode & SHAMT64_MASK)) >> 20);
+static inline uint8_t getShamt5(uint32_t insncode) {
+    return (uint8_t) (((uint32_t) (insncode & SHAMT5_MASK)) >> 20);
+}
+
+// get shift amount 64 bit extension
+static inline uint8_t getShamt6(uint32_t insncode) {
+    return (uint8_t) (((uint32_t) (insncode & SHAMT6_MASK)) >> 20);
 }
 
 // get predecessor for fence instruction bits 27..24
@@ -252,27 +261,29 @@ static inline NSString *getIorw(uint8_t insncode) {
     return res;
 }
 
+static inline void populateOperandReg(DisasmOperand *op, uint8_t reg, DisasmAccessMode accessMode) {
+    op->type = DISASM_OPERAND_REGISTER_TYPE;
+    op->type |= getRegMask(reg);
+    op->accessMode = accessMode;
+}
+
+static inline void populateOperandFpuReg(DisasmOperand *op, uint8_t reg, DisasmAccessMode accessMode) {
+    op->type = DISASM_OPERAND_REGISTER_TYPE;
+    op->type |= getFpuRegMask(reg);
+    op->accessMode = accessMode;
+}
+
 static inline void populateOP(DisasmStruct *disasm, uint32_t insn, const char *mnemonic) {
     strcpy(disasm->instruction.mnemonic, mnemonic);
-    disasm->operand[0].type = DISASM_OPERAND_REGISTER_TYPE;
-    disasm->operand[0].type |= getRegMask(getRD(insn));
-    disasm->operand[0].accessMode = DISASM_ACCESS_WRITE;
-    disasm->operand[1].type = DISASM_OPERAND_REGISTER_TYPE;
-    disasm->operand[1].type |= getRegMask(getRS1(insn));
-    disasm->operand[1].accessMode = DISASM_ACCESS_READ;
-    disasm->operand[2].type = DISASM_OPERAND_REGISTER_TYPE;
-    disasm->operand[2].type |= getRegMask(getRS2(insn));
-    disasm->operand[2].accessMode = DISASM_ACCESS_READ;
+    populateOperandReg(&disasm->operand[0], getRD(insn), DISASM_ACCESS_WRITE);
+    populateOperandReg(&disasm->operand[1], getRS1(insn), DISASM_ACCESS_READ);
+    populateOperandReg(&disasm->operand[2], getRS2(insn), DISASM_ACCESS_READ);
 }
 
 static inline void populateOPIMM(DisasmStruct *disasm, uint32_t insn, const char *mnemonic) {
     strcpy(disasm->instruction.mnemonic, mnemonic);
-    disasm->operand[0].type = DISASM_OPERAND_REGISTER_TYPE;
-    disasm->operand[0].type |= getRegMask(getRD(insn));
-    disasm->operand[0].accessMode = DISASM_ACCESS_WRITE;
-    disasm->operand[1].type = DISASM_OPERAND_REGISTER_TYPE;
-    disasm->operand[1].type |= getRegMask(getRS1(insn));
-    disasm->operand[1].accessMode = DISASM_ACCESS_READ;
+    populateOperandReg(&disasm->operand[0], getRD(insn), DISASM_ACCESS_WRITE);
+    populateOperandReg(&disasm->operand[1], getRS1(insn), DISASM_ACCESS_READ);
     disasm->operand[2].type = DISASM_OPERAND_CONSTANT_TYPE;
     disasm->operand[2].immediateValue = getItypeImmediate(insn);
     disasm->operand[2].accessMode = DISASM_ACCESS_READ;
@@ -280,61 +291,59 @@ static inline void populateOPIMM(DisasmStruct *disasm, uint32_t insn, const char
 
 static inline void populateOPIMMShift(DisasmStruct *disasm, uint32_t insn, const char *mnemonic) {
     strcpy(disasm->instruction.mnemonic, mnemonic);
-    disasm->operand[0].type = DISASM_OPERAND_REGISTER_TYPE;
-    disasm->operand[0].type |= getRegMask(getRD(insn));
-    disasm->operand[0].accessMode = DISASM_ACCESS_WRITE;
-    disasm->operand[1].type = DISASM_OPERAND_REGISTER_TYPE;
-    disasm->operand[1].type |= getRegMask(getRS1(insn));
-    disasm->operand[1].accessMode = DISASM_ACCESS_READ;
+    populateOperandReg(&disasm->operand[0], getRD(insn), DISASM_ACCESS_WRITE);
+    populateOperandReg(&disasm->operand[1], getRS1(insn), DISASM_ACCESS_READ);
     disasm->operand[2].type = DISASM_OPERAND_CONSTANT_TYPE;
-    disasm->operand[2].immediateValue = getShamt(insn);
+    disasm->operand[2].immediateValue = getShamt4(insn);
+    disasm->operand[2].size = 4;
     disasm->operand[2].accessMode = DISASM_ACCESS_READ;
 }
 
 static inline void populateOPIMMShift64(DisasmStruct *disasm, uint32_t insn, const char *mnemonic) {
     strcpy(disasm->instruction.mnemonic, mnemonic);
-    disasm->operand[0].type = DISASM_OPERAND_REGISTER_TYPE;
-    disasm->operand[0].type |= getRegMask(getRD(insn));
-    disasm->operand[0].accessMode = DISASM_ACCESS_WRITE;
-    disasm->operand[1].type = DISASM_OPERAND_REGISTER_TYPE;
-    disasm->operand[1].type |= getRegMask(getRS1(insn));
-    disasm->operand[1].accessMode = DISASM_ACCESS_READ;
+    populateOperandReg(&disasm->operand[0], getRD(insn), DISASM_ACCESS_WRITE);
+    populateOperandReg(&disasm->operand[1], getRS1(insn), DISASM_ACCESS_READ);
     disasm->operand[2].type = DISASM_OPERAND_CONSTANT_TYPE;
-    disasm->operand[2].immediateValue = getShamt64(insn);
+    disasm->operand[2].immediateValue = getShamt5(insn);
+    disasm->operand[2].size = 5;
+    disasm->operand[2].accessMode = DISASM_ACCESS_READ;
+}
+
+static inline void populateOPIMMShift128(DisasmStruct *disasm, uint32_t insn, const char *mnemonic) {
+    strcpy(disasm->instruction.mnemonic, mnemonic);
+    populateOperandReg(&disasm->operand[0], getRD(insn), DISASM_ACCESS_WRITE);
+    populateOperandReg(&disasm->operand[1], getRS1(insn), DISASM_ACCESS_READ);
+    disasm->operand[2].type = DISASM_OPERAND_CONSTANT_TYPE;
+    disasm->operand[2].immediateValue = getShamt5(insn);
+    disasm->operand[2].size = 6;
     disasm->operand[2].accessMode = DISASM_ACCESS_READ;
 }
 
 static inline void populateLOAD(DisasmStruct *disasm, uint32_t insn, const char *mnemonic) {
     strcpy(disasm->instruction.mnemonic, mnemonic);
-    disasm->operand[0].type = DISASM_OPERAND_REGISTER_TYPE;
-    disasm->operand[0].type |= getRegMask(getRD(insn));
-    disasm->operand[0].accessMode = DISASM_ACCESS_WRITE;
+    populateOperandReg(&disasm->operand[0], getRD(insn), DISASM_ACCESS_WRITE);
     disasm->operand[1].type = DISASM_OPERAND_MEMORY_TYPE;
     disasm->operand[1].type |= getRegMask(getRS1(insn));
     disasm->operand[1].memory.baseRegistersMask = getRegMask(getRS1(insn));
     disasm->operand[1].memory.displacement = getItypeImmediate(insn);
     disasm->operand[1].memory.scale = 1;
-    disasm->operand[2].accessMode = DISASM_ACCESS_READ;
+    disasm->operand[1].accessMode = DISASM_ACCESS_READ;
 }
 
 static inline void populateSTORE(DisasmStruct *disasm, uint32_t insn, const char *mnemonic) {
     strcpy(disasm->instruction.mnemonic, mnemonic);
-    disasm->operand[0].type = DISASM_OPERAND_REGISTER_TYPE;
-    disasm->operand[0].type |= getRegMask(getRS2(insn));
-    disasm->operand[0].accessMode = DISASM_ACCESS_WRITE;
+    populateOperandReg(&disasm->operand[0], getRD(insn), DISASM_ACCESS_WRITE);
     disasm->operand[1].type = DISASM_OPERAND_MEMORY_TYPE;
     disasm->operand[1].type |= getRegMask(getRS1(insn));
     disasm->operand[1].memory.baseRegistersMask = getRegMask(getRS1(insn));
     disasm->operand[1].memory.displacement = getStypeImmediate(insn);
     disasm->operand[1].memory.scale = 1;
-    disasm->operand[2].accessMode = DISASM_ACCESS_READ;
+    disasm->operand[1].accessMode = DISASM_ACCESS_READ;
 }
 
 static inline void populateLR(DisasmStruct *disasm, uint32_t insn, const char *mnemonic) {
     strcpy(disasm->instruction.mnemonic, mnemonic);
-    disasm->operand[0].type = DISASM_OPERAND_REGISTER_TYPE;
-    disasm->operand[0].type |= getRegMask(getRD(insn));
-    disasm->operand[0].accessMode = DISASM_ACCESS_WRITE;
+    populateOperandReg(&disasm->operand[0], getRD(insn), DISASM_ACCESS_WRITE);
     disasm->operand[1].type = DISASM_OPERAND_MEMORY_TYPE;
     disasm->operand[1].type |= getRegMask(getRS1(insn));
     disasm->operand[1].memory.baseRegistersMask = getRegMask(getRS1(insn));
@@ -344,12 +353,8 @@ static inline void populateLR(DisasmStruct *disasm, uint32_t insn, const char *m
 
 static inline void populateAMO(DisasmStruct *disasm, uint32_t insn, const char *mnemonic) {
     strcpy(disasm->instruction.mnemonic, mnemonic);
-    disasm->operand[0].type = DISASM_OPERAND_REGISTER_TYPE;
-    disasm->operand[0].type |= getRegMask(getRD(insn));
-    disasm->operand[0].accessMode = DISASM_ACCESS_WRITE;
-    disasm->operand[1].type = DISASM_OPERAND_REGISTER_TYPE;
-    disasm->operand[1].type |= getRegMask(getRS2(insn));
-    disasm->operand[1].accessMode = DISASM_ACCESS_WRITE;
+    populateOperandReg(&disasm->operand[0], getRD(insn), DISASM_ACCESS_WRITE);
+    populateOperandReg(&disasm->operand[1], getRS2(insn), DISASM_ACCESS_READ);
     disasm->operand[2].type = DISASM_OPERAND_MEMORY_TYPE;
     disasm->operand[2].type |= getRegMask(getRS1(insn));
     disasm->operand[2].memory.baseRegistersMask = getRegMask(getRS1(insn));
@@ -359,9 +364,7 @@ static inline void populateAMO(DisasmStruct *disasm, uint32_t insn, const char *
 
 static inline void populateFP_2reg(DisasmStruct *disasm, uint32_t insn, const char *mnemonic) {
     strcpy(disasm->instruction.mnemonic, mnemonic);
-    disasm->operand[0].type = DISASM_OPERAND_REGISTER_TYPE;
-    disasm->operand[0].type |= getFpuRegMask(getRD(insn));
-    disasm->operand[0].accessMode = DISASM_ACCESS_WRITE;
+    populateOperandReg(&disasm->operand[0], getRD(insn), DISASM_ACCESS_WRITE);
     disasm->operand[1].type = DISASM_OPERAND_REGISTER_TYPE;
     disasm->operand[1].type |= getFpuRegMask(getRS1(insn));
     disasm->operand[1].accessMode = DISASM_ACCESS_READ;
@@ -369,9 +372,7 @@ static inline void populateFP_2reg(DisasmStruct *disasm, uint32_t insn, const ch
 
 static inline void populateFp_gp_fp(DisasmStruct *disasm, uint32_t insn, const char *mnemonic) {
     strcpy(disasm->instruction.mnemonic, mnemonic);
-    disasm->operand[0].type = DISASM_OPERAND_REGISTER_TYPE;
-    disasm->operand[0].type |= getRegMask(getRD(insn));
-    disasm->operand[0].accessMode = DISASM_ACCESS_WRITE;
+    populateOperandReg(&disasm->operand[0], getRD(insn), DISASM_ACCESS_WRITE);
     disasm->operand[1].type = DISASM_OPERAND_REGISTER_TYPE;
     disasm->operand[1].type |= getFpuRegMask(getRS1(insn));
     disasm->operand[1].accessMode = DISASM_ACCESS_READ;
@@ -391,9 +392,7 @@ static inline void populateFp_fp_gp(DisasmStruct *disasm, uint32_t insn, const c
     disasm->operand[0].type = DISASM_OPERAND_REGISTER_TYPE;
     disasm->operand[0].type |= getFpuRegMask(getRD(insn));
     disasm->operand[0].accessMode = DISASM_ACCESS_WRITE;
-    disasm->operand[1].type = DISASM_OPERAND_REGISTER_TYPE;
-    disasm->operand[1].type |= getRegMask(getRS1(insn));
-    disasm->operand[1].accessMode = DISASM_ACCESS_READ;
+    populateOperandReg(&disasm->operand[1], getRS1(insn), DISASM_ACCESS_READ);
 }
 
 static inline void populateFpRoundingMode(DisasmOperand *op, uint32_t insn) {

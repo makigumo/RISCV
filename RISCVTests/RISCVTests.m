@@ -54,9 +54,9 @@
 }
 
 - (void)testGetShamt64 {
-    XCTAssertEqual(getShamt64(0x02049493), 0x20);
-    XCTAssertEqual(getShamt64(0x01d4d493), 0x1d);
-    XCTAssertEqual(getShamt64(0x4056d693), 0x5);
+    XCTAssertEqual(getShamt5(0x02049493), 0x20);
+    XCTAssertEqual(getShamt5(0x01d4d493), 0x1d);
+    XCTAssertEqual(getShamt5(0x4056d693), 0x5);
 }
 
 - (void)testGetRoundingMode {

@@ -5,7 +5,7 @@
 Supported instruction sets:
 * [x] RV32I Base Integer Instruction Set
 * [X] RV64I Base Integer Instruction Set
-* [ ] RV128I Base Integer Instruction Set
+* [x] RV128I Base Integer Instruction Set
 * [x] RV32E Base Integer Instruction Set
    * limited to 16 registers
 * [x] RV32M/RV64M Standard Extension for Integer Multiplication and Division
