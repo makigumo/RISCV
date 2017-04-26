@@ -23,6 +23,10 @@
     return _services;
 }
 
+- (Class)cpuContextClass {
+    return [RISCVCtx class];
+}
+
 - (NSObject <CPUContext> *)buildCPUContextForFile:(NSObject <HPDisassembledFile> *)file {
     return [[RISCVCtx alloc] initWithCPU:self andFile:file];
 }
