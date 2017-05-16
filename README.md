@@ -27,6 +27,19 @@ Supported instruction sets:
 
 * [Hopper Disassembler v4](https://www.hopperapp.com/)
 
+## Building
+
+* build with Xcode
+* or, via `xcodebuild`
+* or, using *cmake*
+    ```
+    mkdir build
+    cd build
+    cmake ..
+    make
+    make install
+    ```
+
 ## Resources
 
 * [The RISC-V Instruction Set Manual, Volume I: User-Level ISA, Version 2.1](https://www2.eecs.berkeley.edu/Pubs/TechRpts/2016/EECS-2016-118.html)
