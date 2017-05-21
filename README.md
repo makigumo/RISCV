@@ -41,9 +41,14 @@ DONE | Name | Version
     make
     make install
     ```
+    
+### Linux
+
+Install [GNUstep](https://github.com/gnustep/base), [libobjc2](https://github.com/gnustep/libobjc2) and [libdispatch](https://github.com/nickhutchinson/libdispatch), e.g. by using the script in https://github.com/ckuethe/HopperSDK-Linux.
+Then adjust your `PATH` to include `~/GNUstep/Library/ApplicationSupport/Hopper/gnustep-x86_64/bin/`.    
 
 ## Resources
 
-* [The RISC-V Instruction Set Manual, Volume I: User-Level ISA, Version 2.1](https://www2.eecs.berkeley.edu/Pubs/TechRpts/2016/EECS-2016-118.html)
-* [The RISC-V Instruction Set Manual Volume II: Privileged Architecture Version 1.9.1](https://www2.eecs.berkeley.edu/Pubs/TechRpts/2016/EECS-2016-161.html)
+* [The RISC-V Instruction Set Manual, Volume I: User-Level ISA, Version 2.2](https://github.com/riscv/riscv-isa-manual/releases/tag/riscv-user-2.2)
+* [The RISC-V Instruction Set Manual, Volume II: Privileged Architecture, Version 1.10](https://github.com/riscv/riscv-isa-manual/releases/tag/riscv-priv-1.10)
 
