@@ -207,6 +207,10 @@
     return @"";
 }
 
+- (BOOL)registerHasSideEffectForIndex:(NSUInteger)reg andClass:(RegClass)reg_class {
+    return NO;
+}
+
 - (NSData *)nopWithSize:(NSUInteger)size
                 andMode:(NSUInteger)cpuMode
                 forFile:(NSObject <HPDisassembledFile> *)file {
