@@ -27,10 +27,13 @@ add_definitions(
 include_directories("${HOPPER_SDK_PATH}" "${CMAKE_SOURCE_DIR}")
 
 if(NOT APPLE)
+    if (NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+       message(FATAL_ERROR "Clang required!")
+    endif(NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     find_program(GNUSTEP gnustep-config)
     if(NOT GNUSTEP)
         message(FATAL_ERROR "gnustep-config not found!")
-     endif(NOT GNUSTEP)
+    endif(NOT GNUSTEP)
 
     execute_process(COMMAND ${GNUSTEP} --objc-flags
         OUTPUT_VARIABLE GNUSTEP_FLAGS
@@ -38,10 +41,10 @@ if(NOT APPLE)
 
     separate_arguments(GNUSTEP_FLAGS UNIX_COMMAND ${GNUSTEP_FLAGS})
 
-    execute_process(COMMAND ${GNUSTEP} --objc-libs
+    execute_process(COMMAND ${GNUSTEP} --base-libs
         OUTPUT_VARIABLE GNUSTEP_LIBS
         OUTPUT_STRIP_TRAILING_WHITESPACE)
-    set(GNUSTEP_LIBS "${GNUSTEP_LIBS} -lgnustep-base")
+    set(GNUSTEP_LIBS "${GNUSTEP_LIBS}")
 endif(NOT APPLE)
 
 add_library(
@@ -56,6 +59,8 @@ target_compile_options(
     -pedantic
     -Wall
     -Wextra
+    -Wno-gnu-binary-literal
+    -fPIC
     -fobjc-arc
     -fobjc-nonfragile-abi
     -fblocks
@@ -88,17 +93,12 @@ else(UNIX)
         TARGETS ${PRODUCT_NAME}
         LIBRARY DESTINATION "${HOPPER_PLUGIN_CPU_DIRNAME}/${PRODUCT_NAME}.${HOPPER_PLUGIN_CPU_EXTENSION}"
     )
+    configure_file(Info-gnustep.plist.in Resources/Info-gnustep.plist)
     install(
-        DIRECTORY Resources
+        DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Resources
         DESTINATION "${HOPPER_PLUGIN_CPU_DIRNAME}/${PRODUCT_NAME}.${HOPPER_PLUGIN_CPU_EXTENSION}"
     )
 
 endif(APPLE)
 
-install(
-    TARGETS ${PRODUCT_NAME}
-    LIBRARY DESTINATION ${HOPPER_PLUGIN_CPU_DIRNAME}
-)
-
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
-
