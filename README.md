@@ -44,8 +44,9 @@ DONE | Name | Version
     
 ### Linux
 
-Install [GNUstep](https://github.com/gnustep/base), [libobjc2](https://github.com/gnustep/libobjc2) and [libdispatch](https://github.com/nickhutchinson/libdispatch), e.g. by using the script in https://github.com/ckuethe/HopperSDK-Linux.
-Then adjust your `PATH` to include `~/GNUstep/Library/ApplicationSupport/Hopper/gnustep-x86_64/bin/`.    
+Run `install.sh` from the Hopper-SDK.
+Then adjust your `PATH` to include the created `gnustep-Linux-x86_64/bin/` path.
+Follow above instructions for building with *cmake*.
 
 ## Resources
 
