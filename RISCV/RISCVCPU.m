@@ -52,7 +52,7 @@
 }
 
 - (NSString *)pluginCopyright {
-    return @"©2016 - Makigumo";
+    return @"©2016-2018 - Makigumo";
 }
 
 - (NSArray<NSString *> *)cpuFamilies {
