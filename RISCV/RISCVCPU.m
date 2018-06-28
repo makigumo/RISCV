@@ -63,6 +63,11 @@
     return @"0.1.0";
 }
 
+- (NSString *)commandLineIdentifier {
+    return @"riscv";
+}
+
+
 - (NSArray<NSString *> *)cpuSubFamiliesForFamily:(NSString *)family {
     if ([family isEqualToString:@"RISCV"])
         return @[
@@ -100,7 +105,7 @@
     return @[@"generic"];
 }
 
-- (NSString *)framePointerRegisterNameForFile:(NSObject <HPDisassembledFile> *)file {
+- (NSString *)framePointerRegisterNameForFile:(NSObject <HPDisassembledFile> *)file cpuMode:cpuMode {
     return @"";
 }
 
@@ -140,15 +145,23 @@
     return 0;
 }
 
-- (BOOL)registerIndexIsStackPointer:(NSUInteger)reg ofClass:(RegClass)reg_class {
+- (BOOL)registerIndexIsStackPointer:(NSUInteger)reg
+                            ofClass:(RegClass)reg_class
+                            cpuMode:cpuMode
+                               file:file {
     return reg_class == RegClass_RISCV_ABI && reg == 2;
 }
 
-- (BOOL)registerIndexIsFrameBasePointer:(NSUInteger)reg ofClass:(RegClass)reg_class {
+- (BOOL)registerIndexIsFrameBasePointer:(NSUInteger)reg
+                                ofClass:(RegClass)reg_class
+                                cpuMode:cpuMode
+                                   file:file {
     return NO;
 }
 
-- (BOOL)registerIndexIsProgramCounter:(NSUInteger)reg {
+- (BOOL)registerIndexIsProgramCounter:(NSUInteger)reg
+                              cpuMode:cpuMode
+                                 file:file {
     return reg == 0;
 }
 
