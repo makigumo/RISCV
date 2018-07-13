@@ -31,6 +31,10 @@
     return [[RISCVCtx alloc] initWithCPU:self andFile:file];
 }
 
++ (int)sdkVersion {
+    return HOPPER_CURRENT_SDK_VERSION;
+}
+
 - (HopperUUID *)pluginUUID {
     return [_services UUIDWithString:@"BB67F523-0244-4FBD-8842-ADFE624FB826"];
 }
@@ -105,7 +109,8 @@
     return @[@"generic"];
 }
 
-- (NSString *)framePointerRegisterNameForFile:(NSObject <HPDisassembledFile> *)file cpuMode:cpuMode {
+- (NSString *)framePointerRegisterNameForFile:(NSObject <HPDisassembledFile> *)file
+                                      cpuMode:(uint8_t)cpuMode {
     return @"";
 }
 
@@ -147,21 +152,21 @@
 
 - (BOOL)registerIndexIsStackPointer:(NSUInteger)reg
                             ofClass:(RegClass)reg_class
-                            cpuMode:cpuMode
-                               file:file {
+                            cpuMode:(uint8_t)cpuMode
+                               file:(NSObject <HPDisassembledFile> *)file {
     return reg_class == RegClass_RISCV_ABI && reg == 2;
 }
 
 - (BOOL)registerIndexIsFrameBasePointer:(NSUInteger)reg
                                 ofClass:(RegClass)reg_class
-                                cpuMode:cpuMode
-                                   file:file {
+                                cpuMode:(uint8_t)cpuMode
+                                   file:(NSObject <HPDisassembledFile> *)file {
     return NO;
 }
 
 - (BOOL)registerIndexIsProgramCounter:(NSUInteger)reg
-                              cpuMode:cpuMode
-                                 file:file {
+                              cpuMode:(uint8_t)cpuMode
+                                 file:(NSObject <HPDisassembledFile> *)file {
     return reg == 0;
 }
 
