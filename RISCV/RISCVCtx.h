@@ -66,7 +66,7 @@ extern NSString *getCsrName(uint64_t csr);
 #define DISASM_OPERAND_ROUNDING_MODE    0x0001000000000000llu
 #define DISASM_OPERAND_FENCE    0x0002000000000000llu
 
-typedef enum INSN_TYPE {
+enum INSN_TYPE {
     ITYPE,
     RTYPE,
     UTYPE,
@@ -75,7 +75,7 @@ typedef enum INSN_TYPE {
     UJTYPE
 };
 
-typedef struct itype_insn {
+struct itype_insn {
     uint8_t opcode; /* bits 6..0 */
     uint8_t reg_dest; /* bits 11..7 */
     uint8_t funct3; /* bits 14..12 */
@@ -83,7 +83,7 @@ typedef struct itype_insn {
     uint16_t imm; /* bits 31..20 */
 };
 
-typedef struct rtype_insn {
+struct rtype_insn {
     uint8_t opcode; /* bits 6..0 */
     uint8_t reg_dest; /* bits 11..7 */
     uint8_t funct3; /* bits 14..12 */
@@ -92,7 +92,7 @@ typedef struct rtype_insn {
     uint8_t funct7; /* bits 31..25 */
 };
 
-typedef struct stype_insn {
+struct stype_insn {
     uint8_t opcode; /* bits 6..0 */
     uint8_t funct3; /* bits 14..12 */
     uint8_t reg_src1; /* bits 19..15 */
@@ -100,13 +100,13 @@ typedef struct stype_insn {
     uint16_t imm; /* bits 31..25 11..7 */
 };
 
-typedef struct utype_insn {
+struct utype_insn {
     uint8_t opcode; /* bits 6..0 */
     uint8_t reg_dest; /* bits 11..7 */
     uint16_t imm; /* bits 31..12 */
 };
 
-typedef struct insn {
+struct insn {
     uint8_t opcode;
     enum INSN_TYPE type;
     union {
@@ -117,14 +117,14 @@ typedef struct insn {
     };
 };
 
-typedef enum FpuFormat {
+enum FpuFormat {
     FPU_FMT_SINGLE = 0b00,
     FPU_FMT_DOUBLE = 0b01,
     FPU_FMT_INVALID = 0b10,
     FPU_FMT_QUAD = 0b11,
 };
 
-typedef enum FpuRoundingMode {
+enum FpuRoundingMode {
     FPU_RM_RNE = 0b000,
     FPU_RM_RTZ = 0b001,
     FPU_RM_RDN = 0b010,

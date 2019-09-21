@@ -1540,6 +1540,9 @@
                 case FPU_FMT_QUAD:
                     populateFp_R4(disasm, insncode, "fmadd.q");
                     break;
+                case FPU_FMT_INVALID:
+                    /* Break to return DISASM_UNKNOWN_OPCODE */
+                    break;
             }
             break;
 
@@ -1553,6 +1556,9 @@
                     break;
                 case FPU_FMT_QUAD:
                     populateFp_R4(disasm, insncode, "fmsub.q");
+                    break;
+                case FPU_FMT_INVALID:
+                    /* Break to return DISASM_UNKNOWN_OPCODE */
                     break;
             }
             break;
@@ -1568,6 +1574,9 @@
                 case FPU_FMT_QUAD:
                     populateFp_R4(disasm, insncode, "fnmadd.q");
                     break;
+                case FPU_FMT_INVALID:
+                    /* Break to return DISASM_UNKNOWN_OPCODE */
+                    break;
             }
             break;
 
@@ -1581,6 +1590,9 @@
                     break;
                 case FPU_FMT_QUAD:
                     populateFp_R4(disasm, insncode, "fnmsub.q");
+                    break;
+                case FPU_FMT_INVALID:
+                    /* Break to return DISASM_UNKNOWN_OPCODE */
                     break;
             }
             break;
@@ -1800,7 +1812,7 @@ static inline int regIndexFromType(uint64_t type) {
 - (void)buildAddress:(DisasmStruct *)disasm
             withInsn:(const struct insn *)in {
     // fetch previous instruction
-    uint32_t prev = [_file readUInt32AtVirtualAddress:disasm->virtualAddr - 4];
+    __unused uint32_t prev = [_file readUInt32AtVirtualAddress:disasm->virtualAddr - 4];
     struct insn *prevIn = 0;//getInsn(prev);
     if (prevIn && prevIn->opcode == 0b001111 /* LUI */ &&
             prevIn->itype.reg_dest == in->itype.reg_src1) {
