@@ -116,7 +116,7 @@ static inline DisasmOperandType getCsrMask() {
     return REG_MASK(RegClass_RISCV_CSR, 0);
 }
 
-__unused static NSString *getCsrName(uint64_t csr) {
+__attribute__((unused)) static NSString *getCsrName(uint64_t csr) {
     switch (csr) {
         case 0x000: return @"ustatus";
         case 0x001: return @"flags";

@@ -1812,7 +1812,7 @@ static inline int regIndexFromType(uint64_t type) {
 - (void)buildAddress:(DisasmStruct *)disasm
             withInsn:(const struct insn *)in {
     // fetch previous instruction
-    __unused uint32_t prev = [_file readUInt32AtVirtualAddress:disasm->virtualAddr - 4];
+    __attribute__((unused)) uint32_t prev = [_file readUInt32AtVirtualAddress:disasm->virtualAddr - 4];
     struct insn *prevIn = 0;//getInsn(prev);
     if (prevIn && prevIn->opcode == 0b001111 /* LUI */ &&
             prevIn->itype.reg_dest == in->itype.reg_src1) {
