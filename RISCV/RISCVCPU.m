@@ -35,7 +35,7 @@
     return HOPPER_CURRENT_SDK_VERSION;
 }
 
-- (HopperUUID *)pluginUUID {
+- (NSObject<HPHopperUUID> *)pluginUUID {
     return [_services UUIDWithString:@"BB67F523-0244-4FBD-8842-ADFE624FB826"];
 }
 
@@ -250,5 +250,14 @@
 - (BOOL)canDecompileProceduresForCPUFamily:(NSString *)family andSubFamily:(NSString *)subFamily {
     return NO;
 }
+
+- (int)integerWidthInBitsForCPUFamily:(nullable NSString *)family andSubFamily:(nullable NSString *)subFamily {
+    if ([family isEqualToString:@"RISCV"]) {
+        if ([subFamily isEqualToString:@"riscv32"]) return 32;
+        if ([subFamily isEqualToString:@"riscv64"]) return 64;
+    }
+    return 0;
+}
+
 
 @end
