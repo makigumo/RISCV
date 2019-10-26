@@ -56,7 +56,7 @@
 }
 
 - (NSString *)pluginCopyright {
-    return @"©2016-2018 - Makigumo";
+    return @"©2016-2019 - Makigumo";
 }
 
 - (NSArray<NSString *> *)cpuFamilies {
@@ -67,10 +67,9 @@
     return @"0.1.0";
 }
 
-- (NSString *)commandLineIdentifier {
-    return @"riscv";
+- (nonnull NSArray<NSString *> *)commandLineIdentifiers {
+    return  @[@"riscv"];
 }
-
 
 - (NSArray<NSString *> *)cpuSubFamiliesForFamily:(NSString *)family {
     if ([family isEqualToString:@"RISCV"])
